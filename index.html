@@ -257,6 +257,8 @@ html, body {
 
 /* ── OVERVIEW VIEW ── */
 .view-pad { padding: 20px; }
+/* Constrain content width on wide desktop monitors */
+.view-pad, .settings-view { max-width: 1280px; margin-left: auto; margin-right: auto; width: 100%; box-sizing: border-box; }
 
 /* Hero metrics row */
 .hero-row {
@@ -791,14 +793,11 @@ html, body {
   .pos-table { table-layout: fixed; width: 100%; }
   .pos-th, .pos-td { padding: 8px 6px; font-size: 8px; }
   .pos-th:first-child, .pos-td:first-child { width: 28%; }
-  /* Nav pill: match Instagram — flush to bottom, full width minus small margin */
-  #mobile-nav {
-    bottom: 8px !important;
-    width: calc(100% - 24px) !important;
-  }
   #mobile-nav {
     display: flex !important;
-    position: fixed; bottom: calc(8px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+    position: fixed;
+    bottom: max(env(safe-area-inset-bottom), 4px);
+    left: 50%; transform: translateX(-50%);
     width: calc(100% - 24px); max-width: 480px;
     height: 64px; z-index: 200;
     background: rgba(22,24,30,.96);
@@ -1830,7 +1829,7 @@ html { -webkit-text-size-adjust: 100%; }
           <div class="settings-section">
             <div class="settings-title">About APEX</div>
             <div style="padding:0 14px;font-size:12px;color:var(--t3);line-height:1.6">
-              APEX Portfolio Intelligence <span style="color:var(--acc);font-weight:600">v3.5</span> — offline-ready PWA. All data stays on your device.<br>
+              APEX Portfolio Intelligence <span style="color:var(--acc);font-weight:600">v3.6</span> — offline-ready PWA. All data stays on your device.<br>
               No account required. No cloud. No tracking.<br>
               <span style="color:var(--acc)">✓ Installable</span> — tap your browser menu and choose "Add to Home Screen."
             </div>
