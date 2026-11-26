@@ -1009,10 +1009,92 @@ html { -webkit-text-size-adjust: 100%; }
   pointer-events: none; z-index: 9999;
   animation: confettiFall 2.5s ease-in forwards;
 }
+
+/* ── PIN LOCK ── */
+#pin-screen {
+  position: fixed; inset: 0; z-index: 99999;
+  background: var(--bg0);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 28px;
+}
+#pin-screen.hidden { display: none; }
+.pin-logo {
+  font-size: 22px; font-weight: 800; letter-spacing: 3px;
+  color: var(--acc); font-family: 'Inter', sans-serif;
+}
+.pin-profile-name {
+  font-size: 13px; color: var(--t3); letter-spacing: 1px; margin-top: -18px;
+}
+.pin-dots {
+  display: flex; gap: 14px; align-items: center;
+}
+.pin-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--t4);
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pin-dot.filled { background: var(--acc); border-color: var(--acc); }
+.pin-dot.error  { background: var(--red); border-color: var(--red); }
+.pin-keypad {
+  display: grid; grid-template-columns: repeat(3, 72px);
+  grid-template-rows: repeat(4, 60px);
+  gap: 10px;
+}
+.pin-key {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--t1);
+  font-size: 20px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.1s, transform 0.08s;
+  user-select: none;
+}
+.pin-key:hover  { background: var(--bg3); }
+.pin-key:active { transform: scale(0.93); background: var(--acc-dim); }
+.pin-key.del    { font-size: 16px; color: var(--t3); }
+.pin-key.empty  { background: transparent; border: none; cursor: default; }
+.pin-error-msg  { font-size: 12px; color: var(--red); min-height: 18px; letter-spacing: 0.5px; }
+.pin-shake {
+  animation: pinShake 0.35s ease;
+}
+@keyframes pinShake {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-10px); }
+  40%      { transform: translateX(10px); }
+  60%      { transform: translateX(-8px); }
+  80%      { transform: translateX(8px); }
+}
 </style>
 </head>
 <body>
 
+<!-- ── PIN LOCK SCREEN ── -->
+<div id="pin-screen" class="hidden">
+  <div class="pin-logo">APEX</div>
+  <div class="pin-profile-name" id="pin-profile-label">DEFAULT</div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-error-msg" id="pin-error"></div>
+  <div class="pin-keypad">
+    <div class="pin-key" onclick="pinKey('1')">1</div>
+    <div class="pin-key" onclick="pinKey('2')">2</div>
+    <div class="pin-key" onclick="pinKey('3')">3</div>
+    <div class="pin-key" onclick="pinKey('4')">4</div>
+    <div class="pin-key" onclick="pinKey('5')">5</div>
+    <div class="pin-key" onclick="pinKey('6')">6</div>
+    <div class="pin-key" onclick="pinKey('7')">7</div>
+    <div class="pin-key" onclick="pinKey('8')">8</div>
+    <div class="pin-key" onclick="pinKey('9')">9</div>
+    <div class="pin-key empty"></div>
+    <div class="pin-key" onclick="pinKey('0')">0</div>
+    <div class="pin-key del" onclick="pinBackspace()">⌫</div>
+  </div>
+</div>
 
 <!-- APEX SPLASH SCREEN -->
 <div id="apex-splash" style="
@@ -1419,6 +1501,17 @@ html { -webkit-text-size-adjust: 100%; }
               Each profile stores its own portfolio, budget and watchlist. Share this app with friends &amp; family — everyone picks their profile.
             </div>
             <div class="settings-profile-grid" id="profile-grid"><!-- filled by renderProfileGrid() --></div>
+            <!-- PIN LOCK -->
+            <div class="setting-row" style="border-top:1px solid var(--border);margin-top:10px;padding-top:14px">
+              <div>
+                <div class="setting-label">Profile PIN Lock</div>
+                <div class="setting-desc" id="pin-status-desc">Protect the active profile with a 4-digit PIN.</div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn" id="pin-set-btn" style="font-size:11px;padding:4px 12px" onclick="openSetPINModal()">Set PIN</button>
+                <button class="btn btn-ghost" id="pin-remove-btn" style="font-size:11px;padding:4px 12px;display:none;color:var(--red)" onclick="removePIN()">Remove PIN</button>
+              </div>
+            </div>
           </div>
 
           <!-- DATA & CONNECTION -->
@@ -3774,9 +3867,14 @@ function renderSidebarProfileBar() {
     <div class="profile-switch">↕</div>`;
 }
 
-function switchProfile(name) {
+async function switchProfile(name) {
+  // PIN gate — verify before switching to a locked profile
+  if(PIN.hasPin(name)) {
+    const ok = await showPinScreen(name);
+    if(!ok) return;
+  }
   PROFILES.switchTo(name);
-  // Reload all data for new profile (re-init globals)
+  // Reload all data for new profile
   portfolio = S.get('portfolio') || DEFAULT_PORTFOLIO.map((p,i)=>({...p,id:i+1}));
   targets   = S.get('targets')   || {...DEFAULT_TARGETS};
   watchlist = S.get('watchlist') || [...DEFAULT_WATCHLIST];
@@ -3786,6 +3884,7 @@ function switchProfile(name) {
   renderSidebarProfileBar();
   renderAll();
   renderFullPositions();
+  updatePinSettingsUI();
   showToast(`Switched to ${name}`);
 }
 
@@ -3891,6 +3990,197 @@ function dismissPwaBanner() {
 }
 
 /* ── BOOT ── */
+/* ═══════════════════════════════════════════
+   PIN LOCK ENGINE
+   ═══════════════════════════════════════════ */
+
+const PIN = {
+  _key(profile) { return 'apex_pin_' + (profile||'Default').replace(/\s+/g,'_'); },
+
+  async _hash(pin) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('apex:' + pin));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  },
+
+  hasPin(profile) {
+    return !!localStorage.getItem(this._key(profile));
+  },
+
+  async setPin(profile, pin) {
+    const h = await this._hash(pin);
+    localStorage.setItem(this._key(profile), h);
+  },
+
+  async verify(profile, pin) {
+    const stored = localStorage.getItem(this._key(profile));
+    if(!stored) return true;  // no PIN = always pass
+    const h = await this._hash(pin);
+    return h === stored;
+  },
+
+  remove(profile) {
+    localStorage.removeItem(this._key(profile));
+  }
+};
+
+/* ── PIN SCREEN STATE ── */
+let _pinBuffer    = '';
+let _pinResolve   = null;   // resolves when user enters correct PIN
+let _pinProfile   = '';
+
+function _renderDots(err) {
+  for(let i=0;i<4;i++) {
+    const d = document.getElementById('pd'+i);
+    if(!d) continue;
+    d.className = 'pin-dot' + (_pinBuffer.length>i ? (err?' error':' filled') : '');
+  }
+}
+
+async function pinKey(digit) {
+  if(_pinBuffer.length >= 4) return;
+  _pinBuffer += digit;
+  _renderDots(false);
+  if(_pinBuffer.length === 4) {
+    const ok = await PIN.verify(_pinProfile, _pinBuffer);
+    if(ok) {
+      document.getElementById('pin-screen').classList.add('hidden');
+      if(_pinResolve) { _pinResolve(true); _pinResolve = null; }
+    } else {
+      _renderDots(true);
+      const dots = document.getElementById('pin-dots');
+      if(dots) { dots.classList.add('pin-shake'); setTimeout(()=>dots.classList.remove('pin-shake'),400); }
+      const errEl = document.getElementById('pin-error');
+      if(errEl) errEl.textContent = 'Incorrect PIN — try again';
+      setTimeout(() => {
+        _pinBuffer = '';
+        _renderDots(false);
+        if(errEl) errEl.textContent = '';
+      }, 600);
+    }
+  }
+}
+
+function pinBackspace() {
+  if(!_pinBuffer.length) return;
+  _pinBuffer = _pinBuffer.slice(0,-1);
+  _renderDots(false);
+}
+
+function showPinScreen(profileName) {
+  return new Promise(resolve => {
+    _pinProfile = profileName;
+    _pinBuffer  = '';
+    _pinResolve = resolve;
+    _renderDots(false);
+    const lbl = document.getElementById('pin-profile-label');
+    if(lbl) lbl.textContent = profileName.toUpperCase();
+    const errEl = document.getElementById('pin-error');
+    if(errEl) errEl.textContent = '';
+    document.getElementById('pin-screen').classList.remove('hidden');
+  });
+}
+
+/* ── SET PIN MODAL ── */
+function openSetPINModal() {
+  let step = 1, firstPin = '';
+  function render(msg='') {
+    const html = `<div style="padding:24px;text-align:center">
+      <div class="modal-title" style="margin-bottom:6px">${step===1?'Set PIN':'Confirm PIN'}</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:20px">
+        ${step===1?'Enter a 4-digit PIN for <b>'+(PROFILES.getActive())+'</b>':'Re-enter your PIN to confirm'}
+      </div>
+      <div class="pin-dots" id="mp-dots" style="justify-content:center;margin-bottom:12px">
+        <div class="pin-dot" id="mpd0"></div>
+        <div class="pin-dot" id="mpd1"></div>
+        <div class="pin-dot" id="mpd2"></div>
+        <div class="pin-dot" id="mpd3"></div>
+      </div>
+      <div class="pin-error-msg" id="mp-error" style="text-align:center">${msg}</div>
+      <div class="pin-keypad" style="margin:14px auto 0">
+        ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((k,i)=>`
+          <div class="pin-key${k===''?' empty':k==='⌫'?' del':''}" ${k!==''?`onclick="mpKey('${k}')"`:''}>
+            ${k}
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>`;
+    openModalRaw(html);
+    // Attach mpKey to window for inline onclick
+    window._mpBuf = '';
+    window.mpKey = function(k) {
+      if(k==='⌫') { window._mpBuf=window._mpBuf.slice(0,-1); mpRenderDots(false); return; }
+      if(window._mpBuf.length>=4) return;
+      window._mpBuf += k;
+      mpRenderDots(false);
+      if(window._mpBuf.length===4) mpSubmit();
+    };
+  }
+
+  function mpRenderDots(err) {
+    for(let i=0;i<4;i++){
+      const d=document.getElementById('mpd'+i);
+      if(!d) continue;
+      d.className='pin-dot'+(window._mpBuf.length>i?(err?' error':' filled'):'');
+    }
+  }
+
+  async function mpSubmit() {
+    if(step===1) {
+      firstPin = window._mpBuf;
+      step = 2;
+      window._mpBuf = '';
+      render();
+    } else {
+      if(window._mpBuf === firstPin) {
+        await PIN.setPin(PROFILES.getActive(), firstPin);
+        closeModal();
+        updatePinSettingsUI();
+        toast('PIN set for ' + PROFILES.getActive());
+      } else {
+        mpRenderDots(true);
+        const dots = document.getElementById('mp-dots');
+        if(dots){dots.classList.add('pin-shake');setTimeout(()=>dots.classList.remove('pin-shake'),400);}
+        const errEl = document.getElementById('mp-error');
+        if(errEl) errEl.textContent = 'PINs do not match — try again';
+        setTimeout(()=>{
+          window._mpBuf=''; firstPin=''; step=1;
+          render("PINs didn't match. Start over.");
+        }, 800);
+      }
+    }
+  }
+
+  window.mpSubmit = mpSubmit;
+  render();
+}
+
+async function removePIN() {
+  const profile = PROFILES.getActive();
+  // Ask for current PIN first
+  if(PIN.hasPin(profile)) {
+    const pinOk = await showPinScreen(profile);
+    if(!pinOk) return;
+  }
+  PIN.remove(profile);
+  updatePinSettingsUI();
+  toast('PIN removed');
+}
+
+function updatePinSettingsUI() {
+  const profile = PROFILES.getActive();
+  const has = PIN.hasPin(profile);
+  const desc = document.getElementById('pin-status-desc');
+  const setBtn = document.getElementById('pin-set-btn');
+  const remBtn = document.getElementById('pin-remove-btn');
+  if(desc) desc.textContent = has
+    ? `Profile "${profile}" is PIN-locked.`
+    : 'Protect the active profile with a 4-digit PIN.';
+  if(setBtn) setBtn.textContent = has ? 'Change PIN' : 'Set PIN';
+  if(remBtn) remBtn.style.display = has ? '' : 'none';
+}
+
 (function init() {
   // Load saved settings into toggles
   ['hide','bench','refresh'].forEach(k => {
@@ -3910,6 +4200,17 @@ function dismissPwaBanner() {
   renderProfileGrid();
   renderSidebarProfileBar();
 
+  // PIN UI state
+  updatePinSettingsUI();
+
+  // PIN gate — if active profile has a PIN, show lock screen before app
+  (async () => {
+    const activeProfile = PROFILES.getActive();
+    if(PIN.hasPin(activeProfile)) {
+      await showPinScreen(activeProfile);
+    }
+  })();
+
   // Initialize with mock prices immediately
   Object.assign(prices, MOCK_PRICES);
   renderAll();
@@ -3923,6 +4224,15 @@ function dismissPwaBanner() {
   if(settings.refresh) {
     setInterval(() => { fetchPrices(); }, 5 * 60 * 1000);
   }
+
+  // PIN keyboard support
+  document.addEventListener('keydown', e => {
+    const pinVisible = !document.getElementById('pin-screen').classList.contains('hidden');
+    if(pinVisible) {
+      if(e.key >= '0' && e.key <= '9') pinKey(e.key);
+      if(e.key === 'Backspace') pinBackspace();
+    }
+  });
 
   // Redraw chart on resize
   window.addEventListener('resize', () => {
