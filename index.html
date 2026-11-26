@@ -1002,7 +1002,7 @@ html { -webkit-text-size-adjust: 100%; }
   font-size: 12px; font-weight: 900; color: var(--acc); flex-shrink: 0;
 }
 .profile-name { font-size: 12px; font-weight: 600; color: var(--t2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.profile-switch { font-size: 10px; color: var(--t3); }
+.profile-switch { font-size: 10px; color: var(--t3); display:none; }
 
 /* Settings sections enhanced */
 .settings-profile-grid {
@@ -4541,9 +4541,17 @@ function renderSidebarProfileBar() {
     sb.appendChild(bar);
   }
   const name = PROFILES.getActive();
-  bar.innerHTML = `<div class="profile-avatar">${PROFILES.initials(name)}</div>
+  bar.innerHTML = `
+    <div style="position:relative;flex-shrink:0;width:32px;height:32px">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--acc)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <circle cx="12" cy="9" r="3.5"/>
+        <path d="M5.5 20.5c.8-3 3.5-5 6.5-5s5.7 2 6.5 5"/>
+      </svg>
+      <span style="position:absolute;bottom:1px;right:0px;width:7px;height:7px;border-radius:50%;background:#ff3040;border:1.5px solid #0d1017;display:block"></span>
+    </div>
     <div class="profile-name">${name}</div>
-    <div class="profile-switch">↕</div>`;
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--t3)" stroke-width="2" stroke-linecap="round"><path d="M7 10l5-5 5 5M7 14l5 5 5-5"/></svg>`;
 }
 
 async function switchProfile(name) {
