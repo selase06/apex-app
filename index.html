@@ -1742,13 +1742,13 @@ html { -webkit-text-size-adjust: 100%; }
   </button>
   <!-- PROFILE (opens bottom sheet with all sections) -->
   <button class="mob-tab" onclick="openProfileSheet(this)" id="mob-profile" style="position:relative">
-    <span style="position:relative;display:inline-block">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <span style="position:relative;display:inline-block" onclick="event.stopPropagation()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" onclick="openProfileSheet(document.getElementById('mob-profile'))">
         <circle cx="12" cy="12" r="10"/>
         <circle cx="12" cy="9" r="3.5"/>
         <path d="M5.5 20.5c.8-3 3.5-5 6.5-5s5.7 2 6.5 5"/>
       </svg>
-      <span id="profile-notif-dot" style="position:absolute;bottom:1px;right:0px;width:7px;height:7px;border-radius:50%;background:#ff3040;border:1.5px solid #0d1017;display:block"></span>
+      <span id="profile-notif-dot" onclick="event.stopPropagation();openNotifPanel()" style="position:absolute;bottom:1px;right:0px;width:9px;height:9px;border-radius:50%;background:#ff3040;border:2px solid #0d1017;display:none;cursor:pointer"></span>
     </span>
     PROFILE
   </button>
@@ -2824,6 +2824,187 @@ function updateTimestamp() {
 }
 
 /* ── CARD RIPPLE ── */
+
+/* ══════════════════════════════════════════════════════
+   NOTIFICATION SYSTEM
+   Generates smart alerts from live data:
+   - Budget overruns / approaching limits
+   - Signal score BUY/SELL triggers on positions
+   - Goals close to completion
+   - Upcoming bills from calendar
+   ══════════════════════════════════════════════════════ */
+
+const NOTIF_KEY = 'apex_notifications';
+const NOTIF_READ_KEY = 'apex_notif_read_ids';
+
+function generateNotifications() {
+  const notifs = [];
+  const now = new Date();
+  const pName = typeof currentProfile !== 'undefined' ? (currentProfile||'Default') : 'Default';
+
+  // ── Budget alerts ──
+  try {
+    const bd = JSON.parse(localStorage.getItem('apex_budget_'+pName)||'null');
+    if(bd) {
+      const totalInc = (bd.income||[]).filter(x=>x.type!=='future').reduce((s,x)=>s+freqToMonthly(x.amount,x.freq||'monthly'),0);
+      const totalExp = (bd.expenses||[]).reduce((s,x)=>s+freqToMonthly(x.amount,x.freq||'monthly'),0);
+      const ratio = totalInc>0 ? totalExp/totalInc : 0;
+      if(ratio>0.9 && totalInc>0) notifs.push({ id:'budget-over-90', type:'warning', icon:'M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', title:'Budget Warning', body:`Expenses are ${Math.round(ratio*100)}% of income. Only $${Math.round(totalInc-totalExp).toLocaleString()}/mo remaining.`, col:'#f59e0b', ts: now.getTime() });
+      else if(ratio>0.75 && totalInc>0) notifs.push({ id:'budget-over-75', type:'caution', icon:'M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', title:'Budget Caution', body:`Expenses at ${Math.round(ratio*100)}% of income. Consider reviewing discretionary spending.`, col:'#fbbf24', ts: now.getTime() });
+
+      // Goals close to completion
+      (bd.goals||[]).forEach((g,i) => {
+        const pct = g.target>0 ? (g.saved||0)/g.target : 0;
+        if(pct>=0.9 && pct<1) notifs.push({ id:'goal-near-'+i, type:'success', icon:'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', title:'Goal Almost Complete!', body:`"${g.label}" is ${Math.round(pct*100)}% funded — only $${Math.round((g.target-g.saved)).toLocaleString()} to go.`, col:'#00e5b0', ts: now.getTime() });
+        if(pct>=1) notifs.push({ id:'goal-done-'+i, type:'success', icon:'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', title:'Goal Reached! 🎯', body:`"${g.label}" is fully funded at $${Math.round(g.target).toLocaleString()}. Time to set a new goal.`, col:'#00e5b0', ts: now.getTime() });
+      });
+
+      // Upcoming bills this week
+      const daysInMonth = new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+      const today = now.getDate();
+      (bd.expenses||[]).forEach((x,i) => {
+        const lc=(x.label||'').toLowerCase();
+        let day=/mortgage|rent|hoa/i.test(lc)?1:/netflix|stream|sub/i.test(lc)?15:/insurance/i.test(lc)?20:/phone|util|electric/i.test(lc)?25:10;
+        const daysAway = day - today;
+        if(daysAway>=0 && daysAway<=5) notifs.push({ id:'bill-due-'+i, type:'info', icon:'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', title:`Bill Due ${daysAway===0?'Today':`in ${daysAway} day${daysAway>1?'s':''}`}`, body:`${x.label} — $${Math.round(freqToMonthly(x.amount,x.freq||'monthly')).toLocaleString()} due ${daysAway===0?'today':'on the '+day+(day===1?'st':day===2?'nd':day===3?'rd':'th')}.`, col:'#60a5fa', ts: now.getTime() });
+      });
+    }
+  } catch(e){}
+
+  // ── Position / Signal alerts ──
+  try {
+    const positions = JSON.parse(localStorage.getItem('apex_positions')||'[]');
+    positions.forEach((p,i) => {
+      if(!p.price || !p.avgCost) return;
+      const gain = (p.price-p.avgCost)/p.avgCost;
+      if(gain<=-0.1) notifs.push({ id:'pos-down-'+p.id, type:'danger', icon:'M22 7L13.5 15.5 8.5 10.5 2 17M16 7h6v6', title:`${p.ticker} Down ${Math.round(Math.abs(gain)*100)}%`, body:`${p.ticker} is ${Math.round(Math.abs(gain)*100)}% below your avg cost of $${p.avgCost.toFixed(2)}. Review your position.`, col:'#f87171', ts: now.getTime() });
+      else if(gain>=0.2) notifs.push({ id:'pos-up-'+p.id, type:'success', icon:'M22 7L13.5 15.5 8.5 10.5 2 17', title:`${p.ticker} Up ${Math.round(gain*100)}%`, body:`${p.ticker} is ${Math.round(gain*100)}% above your avg cost. Consider reviewing your profit target.`, col:'#00e5b0', ts: now.getTime() });
+    });
+  } catch(e){}
+
+  // ── Default welcome notif if nothing else ──
+  if(notifs.length===0) {
+    notifs.push({ id:'welcome', type:'info', icon:'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', title:'Welcome to APEX', body:'Add income, expenses, and positions to unlock smart alerts tailored to your finances.', col:'#a78bfa', ts: now.getTime() });
+  }
+
+  // Merge with stored (don't duplicate IDs)
+  let stored = [];
+  try { stored = JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]'); } catch(e){}
+  const existingIds = new Set(stored.map(n=>n.id));
+  const fresh = notifs.filter(n=>!existingIds.has(n.id));
+  const merged = [...fresh, ...stored].slice(0,30);
+  localStorage.setItem(NOTIF_KEY, JSON.stringify(merged));
+  updateNotifDot();
+  return merged;
+}
+
+function getUnreadIds() {
+  try { return new Set(JSON.parse(localStorage.getItem(NOTIF_READ_KEY)||'[]')); } catch(e){ return new Set(); }
+}
+
+function markAllRead() {
+  const notifs = JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]');
+  localStorage.setItem(NOTIF_READ_KEY, JSON.stringify(notifs.map(n=>n.id)));
+  updateNotifDot();
+}
+
+function dismissNotif(id) {
+  let notifs = JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]');
+  notifs = notifs.filter(n=>n.id!==id);
+  localStorage.setItem(NOTIF_KEY, JSON.stringify(notifs));
+  // also mark read
+  let read = [];
+  try { read = JSON.parse(localStorage.getItem(NOTIF_READ_KEY)||'[]'); } catch(e){}
+  if(!read.includes(id)) read.push(id);
+  localStorage.setItem(NOTIF_READ_KEY, JSON.stringify(read));
+  updateNotifDot();
+  renderNotifPanel();
+}
+
+function updateNotifDot() {
+  const notifs = JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]');
+  const readIds = getUnreadIds();
+  const unread = notifs.filter(n=>!readIds.has(n.id)).length;
+  // mobile dot
+  const dot = document.getElementById('profile-notif-dot');
+  if(dot) dot.style.display = unread>0 ? 'block' : 'none';
+  // sidebar dot
+  const sdot = document.getElementById('sb-notif-dot');
+  if(sdot) sdot.style.display = unread>0 ? 'block' : 'none';
+}
+
+function openNotifPanel() {
+  generateNotifications();
+  let panel = document.getElementById('notif-panel');
+  if(!panel) {
+    panel = document.createElement('div');
+    panel.id = 'notif-panel';
+    panel.style.cssText = `position:fixed;top:0;right:0;bottom:0;width:360px;max-width:100vw;
+      background:#111520;z-index:450;border-left:1px solid rgba(255,255,255,.08);
+      display:flex;flex-direction:column;transform:translateX(100%);
+      transition:transform .26s cubic-bezier(.4,0,.2,1);`;
+    document.body.appendChild(panel);
+    // overlay
+    const ov = document.createElement('div');
+    ov.id = 'notif-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:449;background:rgba(0,0,0,.45);display:none;';
+    ov.onclick = closeNotifPanel;
+    document.body.appendChild(ov);
+  }
+  document.getElementById('notif-overlay').style.display = 'block';
+  renderNotifPanel();
+  panel.style.display = 'flex';
+  requestAnimationFrame(()=>{ panel.style.transform = 'translateX(0)'; });
+  markAllRead();
+}
+
+function closeNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  if(panel) panel.style.transform = 'translateX(100%)';
+  const ov = document.getElementById('notif-overlay');
+  if(ov) ov.style.display = 'none';
+}
+
+function renderNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  if(!panel) return;
+  const notifs = JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]');
+  const typeIcon = { warning:'#f59e0b', caution:'#fbbf24', success:'#00e5b0', info:'#60a5fa', danger:'#f87171' };
+
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 16px;padding-top:calc(16px + env(safe-area-inset-top));border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0">
+      <button onclick="closeNotifPanel()" style="width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span style="font-size:17px;font-weight:700;color:#fff;flex:1">Notifications</span>
+      ${notifs.length>0?`<button onclick="localStorage.setItem('${NOTIF_KEY}','[]');localStorage.setItem('${NOTIF_READ_KEY}','[]');updateNotifDot();renderNotifPanel();" style="font-size:11px;font-weight:600;color:rgba(255,255,255,.4);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;">Clear all</button>`:''}
+    </div>
+    <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 0 calc(24px + env(safe-area-inset-bottom))">
+      ${notifs.length===0
+        ? `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:12px;color:rgba(255,255,255,.25)">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <div style="font-size:14px;font-weight:600">You're all caught up</div>
+            <div style="font-size:12px;text-align:center;max-width:200px;line-height:1.5">Smart alerts appear here as your finances and signals update</div>
+          </div>`
+        : notifs.map(n=>`
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04);cursor:default">
+            <div style="width:40px;height:40px;border-radius:12px;background:${n.col}22;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="${n.col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${n.icon}"/></svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:3px">${n.title}</div>
+              <div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.5">${n.body}</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.25);margin-top:5px">${new Date(n.ts).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>
+            </div>
+            <button onclick="dismissNotif('${n.id}')" style="background:none;border:none;color:rgba(255,255,255,.25);cursor:pointer;padding:2px 4px;flex-shrink:0;font-size:14px;line-height:1">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>`).join('')}
+    </div>`;
+}
+
+// Generate on boot
+setTimeout(()=>{ generateNotifications(); }, 800);
 
 function openProfileSheet(tabEl) {
   document.querySelectorAll('.mob-tab').forEach(n=>n.classList.remove('active'));
