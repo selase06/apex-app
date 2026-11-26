@@ -3524,6 +3524,19 @@ const BUDGET_CAT_HEX = {
   'Bills':'#fb923c','Insurance':'#34d399','Flexible':'#f472b6','Other':'#94a3b8','Savings':'#00e5b0'
 };
 
+// Widget palette for the warm budget redesign
+const BUDGET_CAT_WIDGET = {
+  'Housing':   { emoji:'🏠', bg:'#FFF0E8', bar:'#FF7043', text:'#BF360C' },
+  'Food':      { emoji:'🍔', bg:'#FFF8E1', bar:'#FFA000', text:'#E65100' },
+  'Transport': { emoji:'🚗', bg:'#E8F4FD', bar:'#1E88E5', text:'#0D47A1' },
+  'Bills':     { emoji:'💡', bg:'#FFF3E0', bar:'#FB8C00', text:'#E65100' },
+  'Debt':      { emoji:'💳', bg:'#FCE4EC', bar:'#E91E63', text:'#880E4F' },
+  'Insurance': { emoji:'🛡️', bg:'#E8F5E9', bar:'#43A047', text:'#1B5E20' },
+  'Flexible':  { emoji:'🛍️', bg:'#F3E5F5', bar:'#8E24AA', text:'#4A148C' },
+  'Other':     { emoji:'📦', bg:'#ECEFF1', bar:'#607D8B', text:'#263238' },
+  'Savings':   { emoji:'🎯', bg:'#E0F7FA', bar:'#00ACC1', text:'#006064' },
+};
+
 const BUDGET_CEILINGS = [
   { cat:'Housing',   pct:25, col:'#a78bfa', desc:'Rent/Mortgage, HOA, maintenance' },
   { cat:'Debt',      pct:10, col:'#f87171', desc:'Loans, credit cards, minimum payments' },
@@ -3545,6 +3558,8 @@ function renderBudgetView() {
   const goalsMonthly = bd.goals.reduce((s,g)=>s+(g.monthly||0),0);
   const cashFlow  = activeInc - totalExp - goalsMonthly;
   const surplus   = Math.max(0, cashFlow);
+  const totalSpent = totalExp + goalsMonthly;
+  const remain    = activeInc - totalSpent;
 
   // Category map
   const catMap = {};
@@ -3565,8 +3580,7 @@ function renderBudgetView() {
   if(cashFlow < 0)    score -= 25;
   if(cashFlow > activeInc * 0.1) score += 10;
   score = Math.max(0, Math.min(100, score));
-  const scoreColor = score >= 75 ? '#00e5b0' : score >= 50 ? '#fbbf24' : '#f87171';
-  const scoreLabel = score >= 75 ? 'Healthy' : score >= 50 ? 'Needs Work' : 'At Risk';
+  const scoreLabel = score >= 75 ? 'Healthy 💚' : score >= 50 ? 'Needs Work ⚠️' : 'At Risk 🔴';
 
   // Goals analysis
   const totalGoalTarget = bd.goals.reduce((s,g)=>s+(g.target||0),0);
@@ -3575,317 +3589,244 @@ function renderBudgetView() {
   const monthsToGoals   = goalsMonthly > 0 ? Math.ceil(totalGoalRemain / goalsMonthly) : 0;
 
   // Smart suggestion
-  let suggestionHtml = '';
-  if(surplus > 0) {
-    const carGoal = bd.goals.find(g=>/car|vehicle/i.test(g.label));
+  let tipHtml = '';
+  if(surplus > 100) {
     const emergGoal = bd.goals.find(g=>/emerg|reserve/i.test(g.label));
-    const topGoal = bd.goals.sort((a,b)=>(a.target-a.saved)/(a.monthly||1) - (b.target-b.saved)/(b.monthly||1))[0];
+    const topGoal = [...bd.goals].sort((a,b)=>(a.target-a.saved)/(a.monthly||1) - (b.target-b.saved)/(b.monthly||1))[0];
     let suggest = '';
     if(emergGoal && (emergGoal.saved||0) < emergGoal.target) {
-      suggest = `$${Math.round(surplus*0.6)}/mo → Emergency Fund · $${Math.round(surplus*0.4)}/mo → ${carGoal?carGoal.label:topGoal?.label||'savings'}`;
-    } else if(carGoal && (carGoal.saved||0) < carGoal.target) {
-      suggest = `$${Math.round(surplus*0.7)}/mo → ${carGoal.label} · $${Math.round(surplus*0.3)}/mo → investments`;
+      suggest = `Send $${Math.round(surplus*0.6).toLocaleString()}/mo to Emergency Fund`;
+    } else if(topGoal) {
+      suggest = `Accelerate ${topGoal.label} with $${Math.round(surplus*0.7).toLocaleString()}/mo extra`;
     } else {
-      suggest = `$${Math.round(surplus*0.5)}/mo → investments · $${Math.round(surplus*0.5)}/mo → next goal`;
+      suggest = `Invest $${Math.round(surplus*0.5).toLocaleString()}/mo · Save $${Math.round(surplus*0.5).toLocaleString()}/mo`;
     }
-    suggestionHtml = `<div style="background:rgba(0,229,176,0.08);border:1px solid rgba(0,229,176,0.25);border-radius:var(--r2);padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
-      <span style="font-size:20px">💡</span>
-      <div><div style="font-size:11px;font-weight:700;color:var(--acc);margin-bottom:2px">$${Math.round(surplus).toLocaleString()}/mo unallocated — suggested split:</div>
-      <div style="font-size:12px;color:var(--t2)">${suggest}</div></div></div>`;
+    tipHtml = `<div style="background:linear-gradient(135deg,#E8F5E9,#F1F8E9);border-radius:14px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;border:1px solid #C8E6C9">
+      <span style="font-size:22px">💡</span>
+      <div>
+        <div style="font-size:11px;font-weight:800;color:#2E7D32;margin-bottom:2px">$${Math.round(surplus).toLocaleString()}/mo unallocated</div>
+        <div style="font-size:11px;color:#388E3C">${suggest}</div>
+      </div>
+    </div>`;
   }
 
+  // Build category tiles HTML
+  const catTiles = Object.entries(BUDGET_CAT_WIDGET).filter(([cat])=>cat!=='Savings').map(([cat, w]) => {
+    const amount = catMap[cat] || 0;
+    if(!amount && !bd.expenses.find(x=>(x.cat||'Other')===cat)) return '';
+    const ceiling = BUDGET_CEILINGS.find(c=>c.cat===cat);
+    const ceilAmt = ceiling && activeInc > 0 ? ceiling.pct/100 * activeInc : 0;
+    const pct = ceilAmt > 0 ? Math.min(100, amount/ceilAmt*100) : (amount > 0 ? 100 : 0);
+    const over = ceilAmt > 0 && amount > ceilAmt;
+    const barColor = over ? '#EF5350' : '#66BB6A';
+    return `<div style="background:${w.bg};border-radius:14px;padding:14px 12px;position:relative;min-width:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="font-size:18px">${w.emoji}</span>
+          <span style="font-size:12px;font-weight:700;color:${w.text}">${cat}</span>
+        </div>
+        ${over ? '<span style="font-size:9px;background:#FFEBEE;color:#C62828;border-radius:6px;padding:1px 6px;font-weight:800">OVER</span>' : ''}
+      </div>
+      <div style="font-size:18px;font-weight:900;color:#1A1A2E;font-family:var(--font-mono);margin-bottom:6px">$${Math.round(amount).toLocaleString()}</div>
+      <div style="background:rgba(0,0,0,0.08);border-radius:4px;height:5px;overflow:hidden;margin-bottom:4px">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width 0.5s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:9px;color:${w.text};opacity:0.7">${pct.toFixed(0)}% of budget</span>
+        <span class="panel-action" style="font-size:9px;color:#999" onclick="openBudgetModal('add-expense')">+ add</span>
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  // Income source tiles
+  const incTiles = bd.income.length === 0
+    ? `<div style="grid-column:1/-1;text-align:center;padding:20px;color:#999;font-size:12px">No income added yet — tap + Add Income</div>`
+    : bd.income.map((x,i) => {
+        const mo = freqToMonthly(x.amount, x.freq||'monthly');
+        const isFuture = x.type==='future';
+        const bg = isFuture ? '#F5F5F5' : '#E8F5E9';
+        const textColor = isFuture ? '#757575' : '#1B5E20';
+        const icon = isFuture ? '🕐' : '💰';
+        return `<div style="background:${bg};border-radius:14px;padding:14px 12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:16px">${icon}</span>
+            <span class="panel-action" style="color:#EF5350;font-size:10px" onclick="removeBudgetItem('income',${i})">✕</span>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:${textColor};margin-bottom:2px">${escHTML(x.label)}</div>
+          <div style="font-size:17px;font-weight:900;font-family:var(--font-mono);color:#1A1A2E">$${Math.round(mo).toLocaleString()}</div>
+          <div style="font-size:9px;color:#999;margin-top:2px">${x.freq||'monthly'}${isFuture?' · future':''}</div>
+        </div>`;
+      }).join('');
+
+  // Goals tiles
+  const goalTiles = bd.goals.length === 0
+    ? `<div style="grid-column:1/-1;text-align:center;padding:20px;color:#999;font-size:12px">No goals yet — tap + Add Goal</div>`
+    : bd.goals.map((g,i) => {
+        const pct = g.target > 0 ? Math.min(100,(g.saved||0)/g.target*100) : 0;
+        const remain = Math.max(0,(g.target||0)-(g.saved||0));
+        const mos = (g.monthly||0) > 0 ? Math.ceil(remain/(g.monthly)) : null;
+        return `<div style="background:#E8F4FD;border-radius:14px;padding:14px 12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:16px">🎯</span>
+            <span class="panel-action" style="color:#EF5350;font-size:10px" onclick="removeBudgetItem('goal',${i})">✕</span>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:#0D47A1;margin-bottom:4px">${escHTML(g.label)}</div>
+          <div style="font-size:15px;font-weight:900;font-family:var(--font-mono);color:#1A1A2E">$${Math.round(g.saved||0).toLocaleString()}<span style="font-size:10px;color:#90A4AE"> / $${Math.round(g.target||0).toLocaleString()}</span></div>
+          <div style="background:rgba(0,0,0,0.08);border-radius:4px;height:5px;overflow:hidden;margin:6px 0 3px">
+            <div style="height:100%;width:${pct}%;background:#1E88E5;border-radius:4px;transition:width 0.5s"></div>
+          </div>
+          <div style="font-size:9px;color:#1565C0">${pct.toFixed(0)}% saved${mos ? ' · '+mos+' mo left' : ''} · $${Math.round(g.monthly||0).toLocaleString()}/mo</div>
+        </div>`;
+      }).join('');
+
   pad.innerHTML = `
-  <!-- ── HEALTH SCORECARD ── -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
-    ${[
-      { label:'Budget Score',  val:score+'/100', color:scoreColor, sub:scoreLabel },
-      { label:'Monthly Income',val:'$'+Math.round(activeInc).toLocaleString(), color:'var(--t1)', sub:'active income' },
-      { label:'Total Expenses',val:'$'+Math.round(totalExp).toLocaleString(), color: totalExp>activeInc?'#f87171':'var(--t1)', sub:'bills + debt + food' },
-      { label:'Goals / Month', val:'$'+Math.round(goalsMonthly).toLocaleString(), color:'var(--acc)', sub:'savings allocated' },
-      { label:'Cash Flow',     val:(cashFlow>=0?'+':'')+'$'+Math.round(Math.abs(cashFlow)).toLocaleString(), color:cashFlow>=0?'#00e5b0':'#f87171', sub:cashFlow>=0?'surplus':'deficit' },
-    ].map(c=>`<div class="panel-card" style="text-align:center;padding:14px 10px">
-      <div style="font-size:11px;color:var(--t3);margin-bottom:4px">${c.label}</div>
-      <div style="font-family:var(--font-mono);font-size:20px;font-weight:900;color:${c.color}">${c.val}</div>
-      <div style="font-size:10px;color:var(--t3);margin-top:3px">${c.sub}</div>
-    </div>`).join('')}
-  </div>
+  <!-- ── WARM BUDGET WRAPPER ── -->
+  <div style="background:linear-gradient(135deg,#FFF8F0 0%,#FFF3E8 50%,#FFF0F5 100%);border-radius:20px;padding:18px;min-height:300px">
 
-  <!-- ── TWO-COLUMN MAIN ── -->
-  <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">
-
-    <!-- LEFT COLUMN -->
-    <div>
-
-      <!-- INCOME EDITOR -->
-      <div class="panel-card" style="margin-bottom:16px">
-        <div class="panel-header">
-          <span class="panel-title">Income</span>
-          <span class="panel-action" onclick="openBudgetModal('add-income')">+ Add</span>
-        </div>
-        <div id="bd-income-list">
-          ${bd.income.length === 0
-            ? '<div style="padding:16px;text-align:center;color:var(--t3);font-size:12px">No income added yet — click + Add</div>'
-            : bd.income.map((x,i) => `
-              <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--bd)">
-                <div style="flex:1">
-                  <div style="font-size:13px;color:var(--t1);font-weight:600">${escHTML(x.label)}</div>
-                  <div style="font-size:10px;color:var(--t3)">${x.type==='future'?'🕐 Future':'✓ Active'} · ${x.freq||'monthly'}</div>
-                </div>
-                <div style="font-family:var(--font-mono);font-size:14px;color:var(--acc)">$${Math.round(freqToMonthly(x.amount,x.freq||'monthly')).toLocaleString()}/mo</div>
-                <span class="panel-action" style="color:var(--red);font-size:11px" onclick="removeBudgetItem('income',${i})">✕</span>
-              </div>`).join('')}
-        </div>
+    <!-- TOP HEADER ROW -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:18px;font-weight:900;color:#1A1A2E">Monthly Budget</div>
+        <div style="font-size:11px;color:#999;margin-top:1px">${scoreLabel}</div>
       </div>
-
-      <!-- EXPENSE EDITOR -->
-      <div class="panel-card" style="margin-bottom:16px">
-        <div class="panel-header">
-          <span class="panel-title">Expenses</span>
-          <span class="panel-action" onclick="openBudgetModal('add-expense')">+ Add</span>
-        </div>
-        <div id="bd-expense-list">
-          ${bd.expenses.length === 0
-            ? '<div style="padding:16px;text-align:center;color:var(--t3);font-size:12px">No expenses added yet — click + Add</div>'
-            : Object.entries(BUDGET_CAT_HEX).filter(([c])=>c!=='Savings').map(([cat,col])=>{
-                const items = bd.expenses.filter(x=>(x.cat||'Other')===cat);
-                if(!items.length) return '';
-                const catTotal = items.reduce((s,x)=>s+freqToMonthly(x.amount,x.freq||'monthly'),0);
-                return `<div style="padding:6px 14px 2px;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--bd)">
-                  <span style="font-size:10px;font-weight:700;color:${col};text-transform:uppercase;letter-spacing:0.08em">${cat}</span>
-                  <span style="float:right;font-size:10px;color:var(--t3)">$${Math.round(catTotal).toLocaleString()}/mo</span>
-                </div>` + items.map((x,rawIdx)=>{
-                  const globalIdx = bd.expenses.indexOf(x);
-                  return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px 8px 20px;border-bottom:1px solid rgba(255,255,255,0.04)">
-                    <div style="flex:1">
-                      <div style="font-size:12px;color:var(--t2)">${escHTML(x.label)}</div>
-                      <div style="font-size:10px;color:var(--t3)">${x.freq||'monthly'}</div>
-                    </div>
-                    <div style="font-family:var(--font-mono);font-size:13px;color:var(--t1)">$${Math.round(freqToMonthly(x.amount,x.freq||'monthly')).toLocaleString()}/mo</div>
-                    <span class="panel-action" style="color:var(--red);font-size:11px" onclick="removeBudgetItem('expense',${globalIdx})">✕</span>
-                  </div>`;
-                }).join('');
-              }).filter(Boolean).join('')}
-        </div>
-      </div>
-
-      <!-- SAVINGS GOALS -->
-      <div class="panel-card">
-        <div class="panel-header">
-          <span class="panel-title">Savings Goals</span>
-          <span class="panel-action" onclick="openBudgetModal('add-goal')">+ Add Goal</span>
-        </div>
-
-        <!-- Goals summary chips -->
-        <div style="display:flex;gap:8px;padding:12px 14px 0;flex-wrap:wrap">
-          <div style="background:var(--glass);border-radius:var(--r1);padding:6px 12px;text-align:center">
-            <div style="font-size:10px;color:var(--t3)">Monthly Contribution</div>
-            <div style="font-family:var(--font-mono);font-size:15px;font-weight:800;color:var(--acc)">$${Math.round(goalsMonthly).toLocaleString()}/mo</div>
-          </div>
-          <div style="background:var(--glass);border-radius:var(--r1);padding:6px 12px;text-align:center">
-            <div style="font-size:10px;color:var(--t3)">Total Remaining</div>
-            <div style="font-family:var(--font-mono);font-size:15px;font-weight:800;color:var(--t1)">$${Math.round(totalGoalRemain).toLocaleString()}</div>
-          </div>
-          <div style="background:var(--glass);border-radius:var(--r1);padding:6px 12px;text-align:center">
-            <div style="font-size:10px;color:var(--t3)">Est. Completion</div>
-            <div style="font-family:var(--font-mono);font-size:15px;font-weight:800;color:var(--t1)">${monthsToGoals > 0 ? monthsToGoals+'mo' : '—'}</div>
-          </div>
-        </div>
-
-        ${suggestionHtml ? '<div style="padding:12px 14px 0">' + suggestionHtml + '</div>' : ''}
-
-        <div id="bd-goals-list" style="margin-top:8px">
-          ${bd.goals.length === 0
-            ? '<div style="padding:16px;text-align:center;color:var(--t3);font-size:12px">No goals yet — add an emergency fund, vacation, or any savings target</div>'
-            : bd.goals.map((g,i)=>{
-                const pct = g.target > 0 ? Math.min(100,(g.saved||0)/g.target*100) : 0;
-                const remain = Math.max(0,(g.target||0)-(g.saved||0));
-                const mos = (g.monthly||0) > 0 ? Math.ceil(remain/(g.monthly)) : null;
-                return `<div style="padding:12px 14px;border-top:1px solid var(--bd)">
-                  <div style="display:flex;align-items:start;gap:8px">
-                    <div style="flex:1">
-                      <div style="font-size:13px;font-weight:700;color:var(--t1)">${escHTML(g.label)}</div>
-                      <div style="font-size:10px;color:var(--t3);margin-top:1px">$${Math.round(g.saved||0).toLocaleString()} saved of $${Math.round(g.target||0).toLocaleString()} target · $${Math.round(g.monthly||0).toLocaleString()}/mo${mos?' · '+mos+' mo left':''}</div>
-                    </div>
-                    <span class="panel-action" style="color:var(--red);font-size:11px" onclick="removeBudgetItem('goal',${i})">✕</span>
-                  </div>
-                  <div style="margin-top:8px;background:var(--bg2);border-radius:3px;height:5px;overflow:hidden">
-                    <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--acc),#00b8d9);border-radius:3px;transition:width 0.5s"></div>
-                  </div>
-                </div>`;
-              }).join('')}
-        </div>
-      </div>
-
-    </div><!-- end left col -->
-
-    <!-- RIGHT COLUMN -->
-    <div>
-
-      <!-- DONUT + CEILING CHART -->
-      <div class="panel-card" style="margin-bottom:16px">
-        <div class="panel-header"><span class="panel-title">Expense Breakdown</span></div>
-        <div id="bd-donut-wrap" style="padding:14px 10px"></div>
-      </div>
-
-      <!-- INCOME GROWTH -->
-      <div class="panel-card">
-        <div class="panel-header"><span class="panel-title">Income Growth Plays</span></div>
-        <div style="padding:12px 14px">
-          ${[
-            { rank:'#1', title:'Overtime / Extra Shifts', range:'$200–600/mo', desc:'Fastest path — zero startup cost. Even 2–3 extra shifts/mo compounds fast when directed to goals.' },
-            { rank:'#2', title:'Consulting Side Work',    range:'$300–800/mo', desc:'Your payroll/HR expertise (ADP, compliance, I-9) is valuable. Offer project-based work to SMBs.' },
-            { rank:'#3', title:'Dividend Growth',         range:'$50–200/mo', desc:'Each dollar invested in dividend ETFs (SCHD, VYM) compounds quietly. Time is the edge here.' },
-            { rank:'#4', title:'Room/Space Rental',       range:'$600–1,200/mo', desc:'If you have a spare room or basement, this is the highest single income jump available.' },
-            { rank:'#5', title:'Benefits / Perks Audit',  range:'$100–500/mo', desc:'Review employer 401k match, FSA limits, HSA contributions, and all benefits to maximize their value.' },
-          ].map((p,i)=>`<div style="padding:9px 0;border-bottom:1px solid ${i<4?'var(--bd)':'transparent'}">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-              <span style="font-size:9px;font-weight:900;color:var(--acc);font-family:var(--font-mono);background:rgba(0,229,176,0.1);padding:1px 6px;border-radius:3px">${p.rank}</span>
-              <span style="font-size:12px;font-weight:700;color:var(--t1)">${p.title}</span>
-              <span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--acc);font-family:var(--font-mono)">${p.range}</span>
-            </div>
-            <div style="font-size:11px;color:var(--t3);line-height:1.4">${p.desc}</div>
-          </div>`).join('')}
-        </div>
-      </div>
-
-    </div><!-- end right col -->
-
-  </div>
-  `;
-
-  // Render donut after DOM exists
-  setTimeout(() => renderBudgetDonut(catMap, activeInc, goalsMonthly), 10);
-}
-
-function renderBudgetDonut(catMap, inc, goalsMonthly) {
-  const wrap = $('bd-donut-wrap');
-  if(!wrap) return;
-
-  const uid   = Date.now();
-  const dId   = 'bdd_'+uid;
-  const bId   = 'bdb_'+uid;
-  const DS    = 110;  // display px
-  const PX    = DS*2; // physical px for HiDPI
-
-  // Ceiling data
-  const ceilings = BUDGET_CEILINGS.map(c => ({
-    ...c,
-    actual: c.cat==='Savings' ? (inc>0?goalsMonthly/inc*100:0) : (inc>0?(catMap[c.cat]||0)/inc*100:0)
-  }));
-
-  wrap.innerHTML = `
-    <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
-      <div style="position:relative;flex-shrink:0">
-        <canvas id="${dId}" width="${PX}" height="${PX}" style="width:${DS}px;height:${DS}px;display:block"></canvas>
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
-          <div style="font-family:var(--font-mono);font-size:14px;font-weight:900;color:var(--t1)">${inc>0?'$'+Math.round(inc/1000)+'k':'—'}</div>
-          <div style="font-size:9px;color:var(--t3)">/month</div>
-        </div>
-      </div>
-      <div style="flex:1;display:flex;flex-direction:column;gap:4px">
-        ${Object.entries(BUDGET_CAT_HEX).filter(([c])=>c!=='Other').map(([cat,col])=>{
-          const val = cat==='Savings' ? goalsMonthly : (catMap[cat]||0);
-          if(!val) return '';
-          const pct = inc>0 ? val/inc*100 : 0;
-          return `<div style="display:flex;align-items:center;gap:6px">
-            <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></div>
-            <div style="font-size:10px;color:var(--t2);flex:1">${cat}</div>
-            <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--t1)">${pct.toFixed(0)}%</div>
-          </div>`;
-        }).filter(Boolean).join('')}
+      <div style="display:flex;gap:8px">
+        <button class="btn" style="background:#FF7043;border:none;font-size:11px;padding:7px 13px;border-radius:20px;color:#fff;font-weight:700" onclick="openBudgetModal('add-expense')">+ Expense</button>
+        <button class="btn" style="background:#43A047;border:none;font-size:11px;padding:7px 13px;border-radius:20px;color:#fff;font-weight:700" onclick="openBudgetModal('add-income')">+ Income</button>
+        <button class="btn" style="background:#1E88E5;border:none;font-size:11px;padding:7px 13px;border-radius:20px;color:#fff;font-weight:700" onclick="openBudgetModal('add-goal')">+ Goal</button>
       </div>
     </div>
-    <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Budget Ceilings vs Actuals</div>
-    <canvas id="${bId}" style="width:100%;height:150px;display:block"></canvas>
+
+    ${tipHtml}
+
+    <!-- TOP: ARC GAUGE + QUICK STATS -->
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;margin-bottom:18px">
+
+      <!-- CIRCULAR ARC GAUGE -->
+      <div style="position:relative;width:160px;height:160px;flex-shrink:0">
+        <canvas id="bd-arc-canvas" width="320" height="320" style="width:160px;height:160px;display:block"></canvas>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+          <div style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px">Remain</div>
+          <div style="font-size:20px;font-weight:900;color:${remain>=0?'#2E7D32':'#C62828'};font-family:var(--font-mono);line-height:1">${remain>=0?'$'+Math.round(remain).toLocaleString():'-$'+Math.round(Math.abs(remain)).toLocaleString()}</div>
+          <div style="font-size:9px;color:#999;margin-top:2px">of $${Math.round(activeInc).toLocaleString()}</div>
+        </div>
+      </div>
+
+      <!-- QUICK STAT WIDGETS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${[
+          { label:'Income',   val:'$'+Math.round(activeInc).toLocaleString(),  bg:'#E8F5E9', text:'#1B5E20', emoji:'💰' },
+          { label:'Expenses', val:'$'+Math.round(totalExp).toLocaleString(),   bg:'#FCE4EC', text:'#880E4F', emoji:'💸' },
+          { label:'Savings',  val:'$'+Math.round(goalsMonthly).toLocaleString(), bg:'#E0F7FA', text:'#006064', emoji:'🏦' },
+          { label:'Health',   val:score+'/100',                                bg:'#FFF8E1', text:'#E65100', emoji:'📊' },
+        ].map(s=>`<div style="background:${s.bg};border-radius:14px;padding:12px 10px;text-align:center">
+          <div style="font-size:18px;margin-bottom:4px">${s.emoji}</div>
+          <div style="font-size:14px;font-weight:900;font-family:var(--font-mono);color:#1A1A2E">${s.val}</div>
+          <div style="font-size:9px;color:${s.text};font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-top:2px">${s.label}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- EXPENSE CATEGORY TILES -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:800;color:#1A1A2E;text-transform:uppercase;letter-spacing:.5px">Expense Categories</div>
+        <span style="font-size:10px;color:#999">$${Math.round(totalExp).toLocaleString()} total/mo</span>
+      </div>
+      ${bd.expenses.length === 0
+        ? `<div style="background:#F5F5F5;border-radius:14px;padding:24px;text-align:center;color:#999;font-size:12px">No expenses yet — tap + Expense to add your first bill</div>`
+        : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px">${catTiles}</div>`}
+    </div>
+
+    <!-- INCOME TILES -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:800;color:#1A1A2E;text-transform:uppercase;letter-spacing:.5px">Income Sources</div>
+        <span style="font-size:10px;color:#999">$${Math.round(activeInc).toLocaleString()}/mo active</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px">${incTiles}</div>
+    </div>
+
+    <!-- SAVINGS GOALS -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:800;color:#1A1A2E;text-transform:uppercase;letter-spacing:.5px">Savings Goals</div>
+        <span style="font-size:10px;color:#999">${monthsToGoals>0?monthsToGoals+' mo to finish':totalGoalSaved>0?'On track':'—'}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px">${goalTiles}</div>
+    </div>
+
+    <!-- INCOME GROWTH PLAYS -->
+    <div>
+      <div style="font-size:12px;font-weight:800;color:#1A1A2E;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Growth Plays 🚀</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px">
+        ${[
+          { emoji:'⏰', title:'Overtime Shifts',      range:'$200–600/mo', bg:'#FFF8E1', text:'#E65100' },
+          { emoji:'🧠', title:'HR Consulting',         range:'$300–800/mo', bg:'#EDE7F6', text:'#4A148C' },
+          { emoji:'📈', title:'Dividend ETFs',          range:'$50–200/mo',  bg:'#E8F5E9', text:'#1B5E20' },
+          { emoji:'🏠', title:'Room Rental',            range:'$600–1,200/mo',bg:'#E8F4FD', text:'#0D47A1' },
+          { emoji:'🎁', title:'Benefits Audit',         range:'$100–500/mo', bg:'#FCE4EC', text:'#880E4F' },
+        ].map(p=>`<div style="background:${p.bg};border-radius:14px;padding:12px">
+          <span style="font-size:20px">${p.emoji}</span>
+          <div style="font-size:11px;font-weight:800;color:#1A1A2E;margin:5px 0 2px">${p.title}</div>
+          <div style="font-size:12px;font-weight:900;font-family:var(--font-mono);color:${p.text}">${p.range}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+  </div><!-- end warm wrapper -->
   `;
 
-  // Draw donut
-  const dc = document.getElementById(dId);
-  if(!dc) return;
-  const dctx = dc.getContext('2d');
-  dctx.scale(1,1); // already 2× via width/height
-  const cx=PX/2, cy=PX/2, ro=PX*0.44, ri=PX*0.27;
-  const cats = Object.keys(BUDGET_CAT_HEX).filter(c=>c!=='Other');
-  const vals = cats.map(c=>c==='Savings'?goalsMonthly:(catMap[c]||0));
-  const total = vals.reduce((a,b)=>a+b,0)||1;
-  const GAP=0.03;
-  let start = -Math.PI/2;
-  cats.forEach((cat,i)=>{
-    const val=vals[i];
-    if(val<=0) return;
-    const sweep = (val/total)*(Math.PI*2 - GAP*cats.filter((_,j)=>vals[j]>0).length);
-    dctx.beginPath();
-    dctx.moveTo(cx,cy);
-    dctx.arc(cx,cy,ro,start,start+sweep);
-    dctx.closePath();
-    dctx.fillStyle = BUDGET_CAT_HEX[cat]||'#555';
-    dctx.fill();
-    // % label
-    if(sweep > 0.28) {
-      const mid=start+sweep/2;
-      const lx=cx+Math.cos(mid)*ro*0.68, ly=cy+Math.sin(mid)*ro*0.68;
-      dctx.fillStyle='#fff';
-      dctx.font=`bold ${Math.round(PX*0.065)}px SF Mono,monospace`;
-      dctx.textAlign='center'; dctx.textBaseline='middle';
-      dctx.fillText(Math.round(val/total*100)+'%', lx, ly);
-    }
-    start += sweep + GAP;
-  });
-  // inner hole
-  dctx.beginPath();
-  dctx.arc(cx,cy,ri,0,Math.PI*2);
-  dctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg1').trim() || '#0d1117';
-  dctx.fill();
+  // Draw circular arc gauge after DOM
+  setTimeout(() => renderBudgetArc(totalSpent, activeInc), 10);
+}
 
-  // Draw bar chart
-  const bc = document.getElementById(bId);
-  if(!bc) return;
-  const W = bc.offsetWidth||280, H = 150;
-  bc.width = W*2; bc.height = H*2;
-  bc.style.width = W+'px'; bc.style.height = H+'px';
-  const bctx = bc.getContext('2d');
-  bctx.scale(2,2);
-  const n=ceilings.length, bw=18, gap=10, groupW=bw*2+gap;
-  const totalW = n*groupW + (n-1)*8;
-  const offX = (W - totalW)/2;
-  const maxPct = Math.max(...ceilings.map(c=>Math.max(c.target,c.actual)), 30);
-  const chartH = H - 40;
-  bctx.fillStyle='rgba(255,255,255,0.03)';
-  bctx.fillRect(0,0,W,H);
-  ceilings.forEach((c,i)=>{
-    const x = offX + i*(groupW+8);
-    // ghost (target)
-    const tH = (c.target/maxPct)*chartH;
-    bctx.fillStyle='rgba(255,255,255,0.08)';
-    bctx.beginPath();
-    bctx.roundRect(x, chartH-tH+10, bw, tH, 2);
-    bctx.fill();
-    // actual
-    const aH = (c.actual/maxPct)*chartH;
-    const over = c.cat==='Savings' ? c.actual < c.target : c.actual > c.target;
-    bctx.fillStyle = over ? '#f87171' : c.col;
-    bctx.beginPath();
-    bctx.roundRect(x+bw+2, chartH-aH+10, bw, aH, 2);
-    bctx.fill();
-    // label
-    bctx.fillStyle='rgba(255,255,255,0.4)';
-    bctx.font=`${Math.round(W*0.028)}px SF Pro Display,sans-serif`;
-    bctx.textAlign='center';
-    bctx.fillText(c.cat.substring(0,4), x+bw, H-6);
-    // actual pct
-    bctx.fillStyle = over ? '#f87171' : 'rgba(255,255,255,0.6)';
-    bctx.font=`bold ${Math.round(W*0.028)}px SF Mono,monospace`;
-    bctx.fillText(c.actual.toFixed(0)+'%', x+bw+bw/2+1, chartH-aH+6);
+function renderBudgetArc(spent, income) {
+  const c = document.getElementById('bd-arc-canvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const W = 320, H = 320;
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2, cy=H/2, r=130, strokeW=22;
+
+  // Track arc: 220° span, starting from 200° (bottom-left)
+  const startAngle = (200 * Math.PI/180);
+  const totalAngle = 220 * Math.PI/180;
+  const spentPct   = income > 0 ? Math.min(1, spent/income) : 0;
+  const spentAngle = totalAngle * spentPct;
+
+  // Background track
+  ctx.beginPath();
+  ctx.arc(cx,cy,r, startAngle, startAngle+totalAngle);
+  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+  ctx.lineWidth   = strokeW;
+  ctx.lineCap     = 'round';
+  ctx.stroke();
+
+  // Spent arc — green if under, red if over
+  if(spentPct > 0) {
+    ctx.beginPath();
+    ctx.arc(cx,cy,r, startAngle, startAngle+spentAngle);
+    ctx.strokeStyle = spentPct >= 1 ? '#EF5350' : (spentPct > 0.8 ? '#FFA000' : '#66BB6A');
+    ctx.lineWidth   = strokeW;
+    ctx.lineCap     = 'round';
+    ctx.stroke();
+  }
+
+  // Tick marks at 0%, 25%, 50%, 75%, 100%
+  [0,0.25,0.5,0.75,1].forEach(t => {
+    const a = startAngle + totalAngle*t;
+    const x1 = cx + Math.cos(a)*(r-strokeW/2-4);
+    const y1 = cy + Math.sin(a)*(r-strokeW/2-4);
+    const x2 = cx + Math.cos(a)*(r+strokeW/2+4);
+    const y2 = cy + Math.sin(a)*(r+strokeW/2+4);
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'butt';
+    ctx.stroke();
   });
-  // Legend
-  bctx.fillStyle='rgba(255,255,255,0.3)'; bctx.fillRect(offX,H-18,10,6);
-  bctx.fillStyle='rgba(255,255,255,0.3)';
-  bctx.font=`${Math.round(W*0.028)}px sans-serif`; bctx.textAlign='left';
-  bctx.fillText('Target', offX+13, H-13);
-  bctx.fillStyle='rgba(0,229,176,0.7)'; bctx.fillRect(offX+70,H-18,10,6);
-  bctx.fillText('Actual', offX+83, H-13);
-  bctx.fillStyle='rgba(248,113,113,0.7)'; bctx.fillRect(offX+130,H-18,10,6);
-  bctx.fillText('Over/Under', offX+143, H-13);
 }
 
 /* ── BUDGET MODALS ── */
