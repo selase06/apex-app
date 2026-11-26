@@ -1610,21 +1610,12 @@ function saveCurrencySetting() {
   if(el) { activeCurrency = el.value; localStorage.setItem('apex_currency', activeCurrency); renderAll(); }
 }
 
-/* ── DEFAULT PORTFOLIO (demo data — users replace via Add or CSV Import) ── */
-const DEFAULT_PORTFOLIO = [
-  // Sample diversified starter portfolio — replace with your own positions
-  { id:1, ticker:'VOO',  name:'Vanguard S&P 500 ETF',    shares:5,  avgCost:468.00, sector:'Broad Market',   acct:'Individual' },
-  { id:2, ticker:'QQQM', name:'Invesco Nasdaq 100 ETF',  shares:5,  avgCost:168.00, sector:'Tech ETF',       acct:'Individual' },
-  { id:3, ticker:'SCHD', name:'Schwab US Dividend ETF',  shares:10, avgCost:77.00,  sector:'Dividend ETF',   acct:'Roth IRA' },
-  { id:4, ticker:'AAPL', name:'Apple Inc',               shares:3,  avgCost:170.00, sector:'Tech',           acct:'Individual' },
-  { id:5, ticker:'MSFT', name:'Microsoft Corp',          shares:2,  avgCost:380.00, sector:'Tech',           acct:'Roth IRA' },
-];
+/* ── DEFAULT PORTFOLIO (empty for new users — add positions via + or CSV Import) ── */
+const DEFAULT_PORTFOLIO = [];   // new users start with a blank portfolio
 
-const DEFAULT_WATCHLIST = ['NVDA','AMZN','TSLA','META','GOOGL','BRK-B'];
+const DEFAULT_WATCHLIST = ['VOO','NVDA','AMZN','TSLA','META','GOOGL'];
 
-const DEFAULT_TARGETS = {
-  VOO:35, QQQM:20, SCHD:20, AAPL:15, MSFT:10,
-};
+const DEFAULT_TARGETS = {};
 
 /* ── MOCK PRICES (live fetch attempted, fallback if proxy offline) ── */
 const MOCK_PRICES = {
@@ -2924,7 +2915,7 @@ function clearAll() {
   targets = {...DEFAULT_TARGETS};
   settings = { hide:false, bench:true, refresh:true };
   renderAll();
-  toast('Reset to demo data');
+  toast('Portfolio cleared — add your positions to get started');
 }
 
 function clearBudget() {
