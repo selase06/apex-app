@@ -610,6 +610,33 @@ html, body {
 /* Signal mini chart */
 .signal-mini-chart { margin-top: 10px; }
 
+/* ── PAPER TRADE ── */
+.paper-stat { background: var(--glass); border-radius: 10px; padding: 12px 16px; flex: 1; min-width: 110px; }
+.paper-stat-label { font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.paper-stat-val { font-size: 18px; font-weight: 700; color: var(--t1); font-family: var(--font-mono); }
+.pt-row { background: var(--glass); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+.pt-ticker { font-size: 15px; font-weight: 700; min-width: 54px; }
+.pt-side-buy  { color: #22d87a; }
+.pt-side-sell { color: #ff4f6a; }
+.pt-meta { flex: 1; font-size: 12px; color: var(--t3); }
+.pt-pnl { font-size: 13px; font-weight: 600; font-family: var(--font-mono); min-width: 80px; text-align: right; }
+
+/* ── LEARN ── */
+.learn-card { background: var(--glass); border-radius: 14px; padding: 18px; cursor: pointer; transition: transform .15s, box-shadow .15s; border: 1px solid rgba(255,255,255,.06); }
+.learn-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.learn-card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
+.learn-card-title { font-size: 14px; font-weight: 600; color: var(--t1); margin-bottom: 4px; }
+.learn-card-desc  { font-size: 11px; color: var(--t3); line-height: 1.4; }
+.learn-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.learn-xp-badge { font-size: 10px; color: var(--acc); font-weight: 600; }
+.learn-done-badge { font-size: 10px; color: #22d87a; font-weight: 600; }
+.quiz-opt { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 12px 16px; cursor: pointer; font-size: 13px; color: var(--t1); text-align: left; width: 100%; transition: background .15s, border-color .15s; margin-bottom: 8px; }
+.quiz-opt:hover { background: rgba(var(--acc-rgb),.12); border-color: rgba(var(--acc-rgb),.4); }
+.quiz-opt.correct { background: rgba(34,216,122,.15); border-color: #22d87a; color: #22d87a; }
+.quiz-opt.wrong   { background: rgba(255,79,106,.12); border-color: #ff4f6a; color: #ff4f6a; }
+.xp-bar { height: 4px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+.xp-bar-fill { height: 100%; background: var(--acc); border-radius: 2px; transition: width .4s; }
+
 /* ── DIVIDENDS VIEW ── */
 .div-view { padding: 20px; }
 .div-hero {
@@ -1240,6 +1267,16 @@ html { -webkit-text-size-adjust: 100%; }
         <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></span>
         <span>Rebalance</span>
       </div>
+      <div class="nav-item" onclick="showView('paper',this)">
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 8h10M7 12h6"/></svg></span>
+        <span>Paper Trade</span>
+        <span class="nav-badge" style="background:rgba(255,180,0,.18);color:#ffb400">SIM</span>
+      </div>
+      <div class="nav-item" onclick="showView('learn',this)">
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>
+        <span>Learn</span>
+        <span class="nav-badge" style="background:rgba(0,229,176,.12);color:var(--acc)">XP</span>
+      </div>
       <div class="nav-item" onclick="showView('coach',this)">
         <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 017 7c0 3.5-2.5 6.4-5.8 7.2L12 22l-1.2-5.8C7.5 15.4 5 12.5 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none"/></svg></span>
         <span>AI Coach</span>
@@ -1547,6 +1584,65 @@ html { -webkit-text-size-adjust: 100%; }
             <button class="coach-send" onclick="sendCoach()">↑</button>
           </div>
         </div>
+      </div>
+
+      <!-- ── PAPER TRADE ── -->
+      <div class="view" id="v-paper">
+        <div class="panel-title" style="margin-bottom:16px">📋 Paper Trade Simulator</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Practice trades with virtual money. No real money involved.</div>
+
+        <!-- Stats row -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px" id="paper-stats-row"></div>
+
+        <!-- Place trade form -->
+        <div class="settings-section" style="margin-bottom:20px">
+          <div class="settings-title">Place a Paper Trade</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div>
+              <div style="font-size:11px;color:var(--t3);margin-bottom:4px">Ticker</div>
+              <input class="apex-input" id="pt-ticker" placeholder="e.g. AAPL" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--t3);margin-bottom:4px">Side</div>
+              <select class="apex-input" id="pt-side">
+                <option value="buy">BUY (Long)</option>
+                <option value="sell">SELL (Short)</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--t3);margin-bottom:4px">Shares</div>
+              <input class="apex-input" id="pt-shares" type="number" placeholder="10" min="0.001" step="0.001">
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--t3);margin-bottom:4px">Entry Price ($)</div>
+              <input class="apex-input" id="pt-price" type="number" placeholder="150.00" step="0.01">
+            </div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:var(--t3);margin-bottom:4px">Thesis / Reason</div>
+            <input class="apex-input" id="pt-notes" placeholder="Why are you taking this trade?" style="width:100%">
+          </div>
+          <button class="btn btn-primary" onclick="placePaperTrade()">Place Trade →</button>
+        </div>
+
+        <!-- Open positions -->
+        <div class="settings-title" style="margin-bottom:10px">Open Positions</div>
+        <div id="paper-open-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
+
+        <!-- Trade history -->
+        <div class="settings-title" style="margin-bottom:10px">Closed Trades</div>
+        <div id="paper-closed-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <!-- ── LEARN ── -->
+      <div class="view" id="v-learn">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div class="panel-title">📚 Learn to Invest</div>
+          <div style="font-size:11px;color:var(--acc);font-weight:600" id="learn-xp-display">0 XP</div>
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:4px">Earn XP by completing lessons and quizzes</div>
+        <div class="xp-bar" style="margin-bottom:20px"><div class="xp-bar-fill" id="learn-xp-bar" style="width:0%"></div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px" id="learn-card-grid"></div>
       </div>
 
       <!-- ── SETTINGS ── -->
@@ -2103,23 +2199,61 @@ function renderHeroCards(rows, total) {
   `).join('');
 }
 
+/* ── TRADE LOG (P&L history) ── */
+const TRADE_LOG_KEY = 'apex_trade_log';
+const PERF_SNAP_KEY = 'apex_perf_snaps';
+
+function getTradeLogs() { return S.get(TRADE_LOG_KEY) || []; }
+function getPerfSnaps() { return S.get(PERF_SNAP_KEY) || []; }
+
+function recordTradeLog(type, ticker, shares, price, notes) {
+  const logs = getTradeLogs();
+  logs.push({ id: Date.now(), type, ticker, shares: +shares, price: +price, notes: notes||'', ts: new Date().toISOString() });
+  S.set(TRADE_LOG_KEY, logs);
+  snapPortfolioValue();
+}
+
+function snapPortfolioValue() {
+  const { total } = computedPositions();
+  const snaps = getPerfSnaps();
+  const today = new Date().toISOString().slice(0,10);
+  const last = snaps[snaps.length-1];
+  if(last && last.date === today) { last.val = total; }
+  else { snaps.push({ date: today, val: total }); }
+  if(snaps.length > 800) snaps.splice(0, snaps.length - 800);
+  S.set(PERF_SNAP_KEY, snaps);
+}
+
+function buildPerfFromSnaps(range) {
+  const snaps = getPerfSnaps();
+  const days = { '1W':7,'1M':30,'3M':90,'6M':182,'1Y':365,'ALL':800 }[range] || 30;
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
+  const filtered = snaps.filter(s => new Date(s.date) >= cutoff);
+  return filtered.map(s => ({ date: new Date(s.date), val: s.val }));
+}
+
 /* ── PERFORMANCE CHART ── */
 function generatePerfHistory(range) {
-  const { total } = computedPositions();
+  const { total, rows } = computedPositions();
+  const snaps = buildPerfFromSnaps(range);
+
+  // If we have real snaps, use them (ensure last point = current total)
+  if(snaps.length >= 2) {
+    snaps[snaps.length-1].val = total;
+    return snaps;
+  }
+
+  // Cold start: seed from positions' cost basis as first point (not random)
+  const totalCost = rows.reduce((s,r) => s + r.cost, 0);
+  const firstVal  = totalCost > 0 ? totalCost : total * 0.92;
   const days = { '1W':7,'1M':30,'3M':90,'6M':182,'1Y':365,'ALL':730 }[range] || 30;
   const pts = [];
-  let v = total;
-  const vol = 0.012;
-  const drift = 0.00045;
   for(let i = days; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     if(d.getDay() === 0 || d.getDay() === 6) continue;
-    const r = (Math.random()-0.46)*vol + drift;
-    if(i === 0) v = total;
-    else v = v / Math.exp(r + (Math.random()-0.46)*vol);
-    pts.push({ date:d, val: Math.max(v*0.6, v) });
+    const frac = 1 - i/days;
+    pts.push({ date: d, val: firstVal + (total - firstVal) * frac });
   }
-  // Ensure last point matches current total
   if(pts.length) pts[pts.length-1].val = total;
   return pts;
 }
@@ -2127,9 +2261,10 @@ function generatePerfHistory(range) {
 function generateBenchHistory(pts) {
   if(!pts.length) return [];
   const start = pts[0].val;
+  const spyAnnualReturn = 0.11;
   return pts.map((p,i) => ({
     date: p.date,
-    val: start * (1 + 0.000018 * i + (Math.random()-0.49)*0.008)
+    val: start * (1 + spyAnnualReturn * i / 365)
   }));
 }
 
@@ -2686,18 +2821,28 @@ function renderHeatmap(rows) {
 
 /* ── WATCHLIST ── */
 function renderWatchlist() {
+  const alerts = getWatchAlerts();
   $('watch-grid').innerHTML = watchlist.map(sym => {
-    const px = prices[sym] || MOCK_PRICES[sym] || { price: 100, day: 0 };
+    const px  = prices[sym] || MOCK_PRICES[sym] || { price: 100, day: 0 };
+    const al  = alerts[sym] || {};
+    const hasAlert = al.target > 0 || al.alertPct > 0;
+    const alertHit = al.target > 0 && px.price <= al.target;
     return `
-      <div class="watch-card">
+      <div class="watch-card" style="${alertHit?'border-color:rgba(255,79,106,.4);':''}" >
         <div style="display:flex;justify-content:space-between;align-items:start">
           <div class="watch-sym">${sym}</div>
           <button onclick="removeWatch('${sym}')" style="background:none;border:none;color:var(--t4);cursor:pointer;font-size:14px;padding:0">×</button>
         </div>
-        <div class="watch-name">${sym}</div>
         <div class="watch-price">$${fmtNum(px.price)}</div>
         <span class="watch-chg ${clsChg(px.day)}">${fmtPct(px.day)}</span>
         <canvas class="watch-mini" id="wm-${sym}" width="180" height="36"></canvas>
+        <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
+          ${hasAlert
+            ? `<span style="font-size:10px;color:${alertHit?'#ff4f6a':'var(--t3)'}">🔔 Alert: ${al.target>0?'≤$'+fmtNum(al.target):''}${al.alertPct>0?' or -'+al.alertPct+'%':''}</span>
+               <button onclick="clearWatchAlert('${sym}')" style="background:none;border:none;color:var(--t4);cursor:pointer;font-size:11px;padding:0">✕</button>`
+            : `<button onclick="showAlertForm('${sym}')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--t3);font-size:10px;padding:3px 8px;cursor:pointer">+ Alert</button>`
+          }
+        </div>
       </div>
     `;
   }).join('') || '<div style="color:var(--t3);font-size:12px">Add tickers to watch them here.</div>';
@@ -2745,6 +2890,466 @@ function removeWatch(sym) {
   S.set('watchlist', watchlist);
   renderWatchlist();
 }
+
+function showAlertForm(sym) {
+  const px = (prices[sym]||MOCK_PRICES[sym]||{price:0}).price;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = `<div style="background:#111520;border-radius:16px;padding:24px;width:300px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px">Set Alert — ${sym}</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Current price: $${fmtNum(px)}</div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--t3);margin-bottom:4px">Alert when price drops to ($)</div>
+      <input id="al-target" class="apex-input" type="number" placeholder="e.g. ${fmtNum(px*0.9)}" step="0.01" style="width:100%">
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;color:var(--t3);margin-bottom:4px">OR alert when drop exceeds (%)</div>
+      <input id="al-pct" class="apex-input" type="number" placeholder="e.g. 5" step="0.1" min="0" style="width:100%">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="
+        const t=document.getElementById('al-target').value;
+        const p=document.getElementById('al-pct').value;
+        setWatchAlert('${sym}',t,p);
+        this.closest('[style*=fixed]').remove();
+      ">Set Alert</button>
+      <button class="btn" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+    </div>
+  </div>`;
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
+
+/* ════════════════════════════════════════════════
+   P3 — PAPER TRADE SIMULATOR
+   ════════════════════════════════════════════════ */
+const PAPER_KEY        = 'apex_paper_trades';
+const PAPER_CASH_KEY   = 'apex_paper_cash';
+const PAPER_START      = 10000;
+
+function getPaperCash()      { const v=S.get(PAPER_CASH_KEY); return v===null? PAPER_START : v; }
+function setPaperCash(v)     { S.set(PAPER_CASH_KEY, v); }
+function getPaperPositions() { return (S.get(PAPER_KEY)||[]).filter(t=>t.status==='open'); }
+function getPaperClosed()    { return (S.get(PAPER_KEY)||[]).filter(t=>t.status==='closed'); }
+function allPaperTrades()    { return S.get(PAPER_KEY)||[]; }
+
+function placePaperTrade() {
+  const ticker = ($('pt-ticker')||{value:''}).value.trim().toUpperCase();
+  const side   = ($('pt-side')||{value:'buy'}).value;
+  const shares = parseFloat(($('pt-shares')||{value:'0'}).value);
+  const price  = parseFloat(($('pt-price')||{value:'0'}).value);
+  const notes  = ($('pt-notes')||{value:''}).value.trim();
+  if(!ticker || shares <= 0 || price <= 0) { toast('Fill in ticker, shares, and price'); return; }
+  const cost = shares * price;
+  const cash = getPaperCash();
+  if(side === 'buy' && cost > cash) { toast('Not enough paper cash ($'+fmtNum(cash)+' available)'); return; }
+  const trades = allPaperTrades();
+  trades.push({
+    id: Date.now(), ticker, side, shares, entryPrice: price, notes,
+    entryDate: new Date().toISOString(), status: 'open', exitPrice: null, exitDate: null
+  });
+  S.set(PAPER_KEY, trades);
+  if(side === 'buy') setPaperCash(cash - cost);
+  // Record in real trade log for P&L history
+  recordTradeLog('paper_'+side, ticker, shares, price, notes);
+  toast('Paper '+side.toUpperCase()+': '+shares+'x '+ticker+' @$'+fmtNum(price));
+  // Clear form
+  ['pt-ticker','pt-shares','pt-price','pt-notes'].forEach(id => { const el=$(id); if(el) el.value=''; });
+  renderPaperView();
+}
+
+function closePaperTrade(id) {
+  const exitPrice = prices[allPaperTrades().find(t=>t.id===id)?.ticker]?.price ||
+    parseFloat(prompt('Exit price for this trade?') || '0');
+  if(!exitPrice) return;
+  const trades = allPaperTrades();
+  const t = trades.find(t=>t.id===id);
+  if(!t) return;
+  t.status = 'closed'; t.exitPrice = exitPrice; t.exitDate = new Date().toISOString();
+  const pnl = t.side==='buy'
+    ? (exitPrice - t.entryPrice) * t.shares
+    : (t.entryPrice - exitPrice) * t.shares;
+  if(t.side === 'buy') setPaperCash(getPaperCash() + exitPrice * t.shares);
+  S.set(PAPER_KEY, trades);
+  toast(`Closed ${t.ticker}: ${pnl>=0?'+':''}$${fmtNum(pnl)}`);
+  renderPaperView();
+}
+
+function resetPaperAccount() {
+  if(!confirm('Reset paper account to $10,000? All trades will be cleared.')) return;
+  S.set(PAPER_KEY, []);
+  setPaperCash(PAPER_START);
+  renderPaperView();
+  toast('Paper account reset to $10,000');
+}
+
+function renderPaperView() {
+  const cash   = getPaperCash();
+  const open   = getPaperPositions();
+  const closed = getPaperClosed();
+
+  // Compute unrealized P&L
+  let unrealized = 0;
+  open.forEach(t => {
+    const cur = (prices[t.ticker]||MOCK_PRICES[t.ticker]||{price:t.entryPrice}).price;
+    unrealized += t.side==='buy'
+      ? (cur - t.entryPrice) * t.shares
+      : (t.entryPrice - cur) * t.shares;
+  });
+
+  // Realized P&L
+  let realized = 0;
+  closed.forEach(t => {
+    realized += t.side==='buy'
+      ? (t.exitPrice - t.entryPrice) * t.shares
+      : (t.entryPrice - t.exitPrice) * t.shares;
+  });
+
+  const totalVal = cash + open.reduce((s,t)=>{
+    const cur = (prices[t.ticker]||MOCK_PRICES[t.ticker]||{price:t.entryPrice}).price;
+    return s + cur * t.shares;
+  }, 0);
+
+  const stats = $('paper-stats-row');
+  if(stats) stats.innerHTML = [
+    { label:'Cash Available', val:'$'+fmtNum(cash), color:'var(--t1)' },
+    { label:'Portfolio Value', val:'$'+fmtNum(totalVal), color:'var(--t1)' },
+    { label:'Unrealized P&L', val:(unrealized>=0?'+':'')+'$'+fmtNum(unrealized), color: unrealized>=0?'#22d87a':'#ff4f6a' },
+    { label:'Realized P&L', val:(realized>=0?'+':'')+'$'+fmtNum(realized), color: realized>=0?'#22d87a':'#ff4f6a' },
+    { label:'Total Return', val:(totalVal-PAPER_START>=0?'+':'')+'$'+fmtNum(totalVal-PAPER_START), color: totalVal>=PAPER_START?'#22d87a':'#ff4f6a' },
+  ].map(s=>`<div class="paper-stat"><div class="paper-stat-label">${s.label}</div><div class="paper-stat-val" style="color:${s.color}">${s.val}</div></div>`).join('');
+
+  const openList = $('paper-open-list');
+  if(openList) {
+    if(!open.length) {
+      openList.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:12px 0">No open paper trades. Place one above.</div>';
+    } else {
+      openList.innerHTML = open.map(t => {
+        const cur = (prices[t.ticker]||MOCK_PRICES[t.ticker]||{price:t.entryPrice}).price;
+        const pnl = t.side==='buy' ? (cur-t.entryPrice)*t.shares : (t.entryPrice-cur)*t.shares;
+        const pnlPct = (pnl / (t.entryPrice*t.shares))*100;
+        return `<div class="pt-row">
+          <div class="pt-ticker pt-side-${t.side}">${t.ticker}<br><span style="font-size:10px;font-weight:400">${t.side.toUpperCase()}</span></div>
+          <div class="pt-meta">
+            <div>${t.shares}sh @$${fmtNum(t.entryPrice)}</div>
+            <div style="font-size:10px;color:var(--t4)">${new Date(t.entryDate).toLocaleDateString()}</div>
+            ${t.notes?`<div style="font-size:10px;font-style:italic;color:var(--t3);margin-top:2px">${escHTML(t.notes)}</div>`:''}
+          </div>
+          <div class="pt-pnl" style="color:${pnl>=0?'#22d87a':'#ff4f6a'}">
+            ${pnl>=0?'+':''}$${fmtNum(pnl)}<br>
+            <span style="font-size:10px">${fmtPct(pnlPct)}</span>
+          </div>
+          <button onclick="closePaperTrade(${t.id})" style="background:rgba(255,79,106,.12);border:1px solid rgba(255,79,106,.3);color:#ff4f6a;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:11px;white-space:nowrap">Close</button>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  const closedList = $('paper-closed-list');
+  if(closedList) {
+    if(!closed.length) {
+      closedList.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:12px 0">No closed trades yet.</div>';
+    } else {
+      closedList.innerHTML = closed.slice(-15).reverse().map(t => {
+        const pnl = t.side==='buy' ? (t.exitPrice-t.entryPrice)*t.shares : (t.entryPrice-t.exitPrice)*t.shares;
+        return `<div class="pt-row" style="opacity:.75">
+          <div class="pt-ticker" style="color:var(--t2)">${t.ticker}</div>
+          <div class="pt-meta">
+            <div>${t.side.toUpperCase()} ${t.shares}sh · In $${fmtNum(t.entryPrice)} → Out $${fmtNum(t.exitPrice)}</div>
+            <div style="font-size:10px;color:var(--t4)">${new Date(t.exitDate).toLocaleDateString()}</div>
+          </div>
+          <div class="pt-pnl" style="color:${pnl>=0?'#22d87a':'#ff4f6a'}">${pnl>=0?'+':''}$${fmtNum(pnl)}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Add reset button if not already there
+  const pView = $('v-paper');
+  if(pView && !$('paper-reset-btn')) {
+    const btn = document.createElement('button');
+    btn.id = 'paper-reset-btn';
+    btn.className = 'btn';
+    btn.style.cssText = 'margin-top:20px;color:var(--t3);font-size:11px';
+    btn.textContent = 'Reset Paper Account';
+    btn.onclick = resetPaperAccount;
+    pView.appendChild(btn);
+  }
+}
+
+/* ════════════════════════════════════════════════
+   P4 — WATCHLIST PRICE ALERTS
+   ════════════════════════════════════════════════ */
+// watch_alerts stored as { TICKER: { target: number, alertPct: number, triggered: false } }
+
+function getWatchAlerts() { return S.get('watch_alerts') || {}; }
+
+function setWatchAlert(ticker, target, alertPct) {
+  const alerts = getWatchAlerts();
+  alerts[ticker] = { target: parseFloat(target)||0, alertPct: parseFloat(alertPct)||0, triggered: false };
+  S.set('watch_alerts', alerts);
+  renderWatchlist();
+  toast('Alert set for '+ticker);
+}
+
+function clearWatchAlert(ticker) {
+  const alerts = getWatchAlerts();
+  delete alerts[ticker];
+  S.set('watch_alerts', alerts);
+  renderWatchlist();
+}
+
+/* ════════════════════════════════════════════════
+   P5 — LEARN MODULE
+   ════════════════════════════════════════════════ */
+const LEARN_DATA = [
+  { id:'pe', icon:'📊', color:'#3b82f6', title:'P/E Ratio', desc:'Price-to-Earnings — the most common stock valuation metric', xp:15,
+    content:'The P/E ratio = Stock Price ÷ Earnings Per Share. A P/E of 20 means you pay $20 for every $1 of profit. High P/E = growth expectations; low P/E = value or risk.',
+    quiz:[
+      { q:'A stock costs $100 and earns $5/share. What is its P/E?', opts:['5','15','20','50'], ans:2 },
+      { q:'Which P/E typically signals a "value" stock?', opts:['50+','30+','10-15','100+'], ans:2 },
+      { q:'P/E stands for:', opts:['Price/Earnings','Profit/Equity','Price/Equity','Profit/Expenses'], ans:0 }
+    ]
+  },
+  { id:'rsi', icon:'📉', color:'#8b5cf6', title:'RSI Explained', desc:'Relative Strength Index — spot overbought & oversold conditions', xp:20,
+    content:'RSI measures momentum on a 0-100 scale. Above 70 = overbought (potential sell). Below 30 = oversold (potential buy). It\'s a 14-day default period.',
+    quiz:[
+      { q:'RSI above 70 typically means:', opts:['Buy signal','Overbought','Oversold','Neutral'], ans:1 },
+      { q:'Default RSI period is:', opts:['7 days','14 days','21 days','30 days'], ans:1 },
+      { q:'RSI below 30 is generally considered:', opts:['Overbought','Bullish breakout','Oversold','Neutral'], ans:2 }
+    ]
+  },
+  { id:'dca', icon:'🔄', color:'#22d87a', title:'Dollar-Cost Averaging', desc:'Invest fixed amounts regularly to reduce timing risk', xp:15,
+    content:'DCA = investing a fixed dollar amount on a schedule (weekly/monthly). You buy more shares when price is low, fewer when high. Removes emotion and timing from investing.',
+    quiz:[
+      { q:'DCA helps reduce:', opts:['Portfolio value','Timing risk','Dividend income','P/E ratio'], ans:1 },
+      { q:'When price drops, DCA means you buy:', opts:['Nothing','Fewer shares','More shares','All-in'], ans:2 },
+      { q:'DCA stands for:', opts:['Daily Cash Averaging','Dollar-Cost Averaging','Diversified Capital Approach','Dynamic Chart Analysis'], ans:1 }
+    ]
+  },
+  { id:'divyield', icon:'💰', color:'#f59e0b', title:'Dividend Yield', desc:'How much a company pays in dividends relative to its stock price', xp:15,
+    content:'Dividend Yield = Annual Dividend ÷ Stock Price × 100. A $100 stock paying $3/year has a 3% yield. High yield (>5%) can signal risk; 2-4% is healthy for dividend stocks.',
+    quiz:[
+      { q:'A $200 stock pays $6/year dividend. The yield is:', opts:['6%','3%','30%','1%'], ans:1 },
+      { q:'A very high dividend yield (>8%) often signals:', opts:['Great deal','Hidden risk','Strong growth','No taxes'], ans:1 },
+      { q:'Yield = Annual Dividend ÷ ___', opts:['Earnings','Revenue','Stock Price','Book Value'], ans:2 }
+    ]
+  },
+  { id:'etfvstock', icon:'⚖️', color:'#06b6d4', title:'ETF vs Stock', desc:'When to pick an ETF over individual stocks', xp:15,
+    content:'ETFs hold many stocks in one fund — instant diversification. Stocks let you pick winners but carry more risk. For most investors, 70%+ in ETFs is safer. Use stocks only for your best high-conviction ideas.',
+    quiz:[
+      { q:'An ETF is best described as:', opts:['One company\'s shares','A basket of stocks','A savings account','A bond'], ans:1 },
+      { q:'VOO tracks:', opts:['Nasdaq 100','S&P 500','Dow Jones','Russell 2000'], ans:1 },
+      { q:'ETFs typically offer:', opts:['Higher risk','No diversification','Built-in diversification','Guaranteed returns'], ans:2 }
+    ]
+  },
+  { id:'macd', icon:'〰️', color:'#ec4899', title:'MACD Indicator', desc:'Moving Average Convergence Divergence — trend-following momentum', xp:25,
+    content:'MACD = 12-day EMA minus 26-day EMA. When the MACD line crosses above the Signal line = bullish. Below = bearish. The histogram shows momentum strength.',
+    quiz:[
+      { q:'MACD crossing above Signal line is a:', opts:['Sell signal','Bearish signal','Bullish signal','Neutral signal'], ans:2 },
+      { q:'MACD uses how many EMAs?', opts:['1','2','3','4'], ans:1 },
+      { q:'MACD stands for:', opts:['Moving Avg Convergence Divergence','Market Average Chart Direction','Mean-Adjusted Closing Data','Momentum Avg Cross Deviation'], ans:0 }
+    ]
+  },
+  { id:'bollinger', icon:'📡', color:'#f97316', title:'Bollinger Bands', desc:'Volatility bands that show when a stock is stretched', xp:20,
+    content:'Bollinger Bands = a middle 20-day SMA + upper/lower bands 2 standard deviations away. Price touching the upper band = stretched high. Lower band = stretched low. Narrow bands = breakout coming.',
+    quiz:[
+      { q:'Bollinger Bands use a default period of:', opts:['14 days','20 days','50 days','200 days'], ans:1 },
+      { q:'Narrow Bollinger Bands usually mean:', opts:['High volatility','A breakout is coming','Overbought','Bearish trend'], ans:1 },
+      { q:'Upper Bollinger Band = SMA + how many standard deviations?', opts:['1','1.5','2','3'], ans:2 }
+    ]
+  },
+  { id:'sectors', icon:'🏭', color:'#64748b', title:'Sector Diversification', desc:'Why spreading across sectors protects your portfolio', xp:15,
+    content:'The S&P 500 has 11 sectors. Energy, Tech, Healthcare, Financials, etc. When one sector falls, others may rise. Having 70%+ in one sector (like energy) is concentrated risk.',
+    quiz:[
+      { q:'How many sectors does the S&P 500 have?', opts:['7','9','11','13'], ans:2 },
+      { q:'Heavy concentration in one sector is considered:', opts:['Smart','Concentrated risk','Diversified','Required'], ans:1 },
+      { q:'Utilities stocks are known for:', opts:['High growth','High volatility','Defensive stability','No dividends'], ans:2 }
+    ]
+  },
+  { id:'compounding', icon:'🚀', color:'#10b981', title:'Power of Compounding', desc:'Why time in the market beats timing the market', xp:20,
+    content:'Compounding = earning returns on your returns. $10,000 at 10%/year becomes $67,000 in 20 years without adding a dollar. Start early — 10 years of head start is worth more than doubling contributions later.',
+    quiz:[
+      { q:'Compounding means earning returns on:', opts:['Initial investment only','Your returns too','Dividends only','Cash savings'], ans:1 },
+      { q:'$1,000 at 10%/year for 10 years ≈:', opts:['$1,100','$2,000','$2,594','$10,000'], ans:2 },
+      { q:'The key variable for compounding is:', opts:['Stock picks','Time','Market timing','Luck'], ans:1 }
+    ]
+  },
+  { id:'puts_calls', icon:'🎯', color:'#a855f7', title:'Options Basics', desc:'Calls and puts explained in plain English', xp:30,
+    content:'CALL = right to BUY 100 shares at the strike price. PUT = right to SELL 100 shares. Buy calls if you think price goes up. Buy puts to hedge or profit from a drop. Options expire — timing matters.',
+    quiz:[
+      { q:'A call option gives you the right to:', opts:['Sell 100 shares','Buy 100 shares','Buy 1 share','Sell at any price'], ans:1 },
+      { q:'Buying a put is a bet that the stock will:', opts:['Go up','Stay flat','Go down','Pay dividends'], ans:2 },
+      { q:'One options contract typically covers:', opts:['1 share','10 shares','100 shares','1000 shares'], ans:2 }
+    ]
+  },
+  { id:'support_resist', icon:'🧱', color:'#0ea5e9', title:'Support & Resistance', desc:'Key price levels where buying and selling pressure cluster', xp:20,
+    content:'Support = a price floor where buyers step in. Resistance = a ceiling where sellers appear. When resistance breaks, it often becomes new support. These levels come from historical price action.',
+    quiz:[
+      { q:'Support is where _____ tends to increase:', opts:['Selling pressure','Buying pressure','Volatility','Volume drop'], ans:1 },
+      { q:'When resistance is broken, it often becomes:', opts:['A higher resistance','New support','A sell signal','Meaningless'], ans:1 },
+      { q:'Support and resistance levels are based on:', opts:['Dividends','Earnings','Historical price action','Management decisions'], ans:2 }
+    ]
+  },
+  { id:'52wk', icon:'🗓️', color:'#f43f5e', title:'52-Week High/Low', desc:'Using price range extremes for context', xp:10,
+    content:'52-week high = highest price in the last year. Low = lowest. Stocks near 52-week highs have momentum; near lows may be beaten down or in trouble. Context matters — check WHY before acting.',
+    quiz:[
+      { q:'A stock near its 52-week high suggests:', opts:['Weakness','Momentum','Oversold','Bad earnings'], ans:1 },
+      { q:'52-week range covers:', opts:['Last month','Last quarter','Last year','Last 5 years'], ans:2 },
+      { q:'A stock at its 52-week low should prompt you to check:', opts:['Nothing','Why it fell','Buy immediately','Ignore it'], ans:1 }
+    ]
+  },
+  { id:'rebalancing', icon:'⚖️', color:'#84cc16', title:'Portfolio Rebalancing', desc:'How and when to realign your target allocation', xp:20,
+    content:'Rebalancing = selling winners that grew too large and buying laggards to restore target %. Do it when any position drifts >5% from target, or on a schedule (quarterly). Locks in gains and controls risk.',
+    quiz:[
+      { q:'Rebalancing means:', opts:['Adding new money','Selling all holdings','Restoring target allocation','Timing the market'], ans:2 },
+      { q:'A common trigger to rebalance is drift of:', opts:['1%','3%','5%+','10%+'], ans:2 },
+      { q:'Rebalancing generally involves selling:', opts:['Losers','Winners that grew too large','All positions','Nothing'], ans:1 }
+    ]
+  },
+  { id:'taxes', icon:'🧾', color:'#78716c', title:'Tax-Smart Investing', desc:'Long-term vs short-term capital gains and tax-loss harvesting', xp:25,
+    content:'Hold stocks >1 year for lower long-term capital gains tax (0-20%). Short-term gains taxed as ordinary income (up to 37%). Tax-loss harvesting = selling losers to offset winners. Use Roth IRA for growth stocks — no taxes on withdrawals.',
+    quiz:[
+      { q:'Long-term capital gains apply after holding:', opts:['3 months','6 months','1 year','2 years'], ans:2 },
+      { q:'Tax-loss harvesting means:', opts:['Avoiding taxes by not selling','Selling losers to offset gains','Moving to a tax haven','Waiting for dividends'], ans:1 },
+      { q:'A Roth IRA withdrawal in retirement is:', opts:['Fully taxed','Partially taxed','Tax-free','Subject to penalty'], ans:2 }
+    ]
+  },
+  { id:'macro', icon:'🌍', color:'#0f766e', title:'Macro Indicators', desc:'GDP, inflation, interest rates and what they mean for stocks', xp:25,
+    content:'Rising interest rates = bond competition, growth stocks fall. High inflation = Fed hikes rates. GDP growth = earnings growth. Inverted yield curve = recession warning. Know the macro context before trading.',
+    quiz:[
+      { q:'Rising interest rates typically hurt:', opts:['Value stocks','Energy stocks','Growth stocks','Dividend stocks'], ans:2 },
+      { q:'An inverted yield curve is a warning sign for:', opts:['Inflation','Recession','Bull market','Low volatility'], ans:1 },
+      { q:'GDP growth usually means:', opts:['Corporate earnings fall','Corporate earnings grow','Rates drop fast','Stocks always drop'], ans:1 }
+    ]
+  }
+];
+
+const LEARN_DONE_KEY = 'apex_learn_done';
+const LEARN_XP_KEY   = 'apex_learn_xp';
+
+function getLearnDone() { return S.get(LEARN_DONE_KEY) || []; }
+function getLearnXP()   { return S.get(LEARN_XP_KEY) || 0; }
+
+function renderLearnView() {
+  const done  = getLearnDone();
+  const xp    = getLearnXP();
+  const maxXP = LEARN_DATA.reduce((s,c)=>s+c.xp,0);
+  const pct   = Math.min(100, (xp/maxXP)*100);
+
+  const xpDisplay = $('learn-xp-display');
+  if(xpDisplay) xpDisplay.textContent = xp + ' / ' + maxXP + ' XP';
+  const xpBar = $('learn-xp-bar');
+  if(xpBar) xpBar.style.width = pct+'%';
+
+  const grid = $('learn-card-grid');
+  if(!grid) return;
+  grid.innerHTML = LEARN_DATA.map(card => {
+    const isDone = done.includes(card.id);
+    return `<div class="learn-card" onclick="openLearnCard('${card.id}')">
+      <div class="learn-card-icon" style="background:${card.color}22;color:${card.color}">${card.icon}</div>
+      <div class="learn-card-title">${card.title}</div>
+      <div class="learn-card-desc">${card.desc}</div>
+      <div class="learn-card-footer">
+        <span class="learn-xp-badge">+${card.xp} XP</span>
+        ${isDone ? '<span class="learn-done-badge">✓ Done</span>' : '<span style="font-size:10px;color:var(--t4)">Not started</span>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openLearnCard(id) {
+  const card = LEARN_DATA.find(c=>c.id===id);
+  if(!card) return;
+  const done = getLearnDone();
+  const isDone = done.includes(id);
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;display:flex;align-items:flex-end;justify-content:center';
+  overlay.id = 'learn-overlay';
+
+  overlay.innerHTML = `<div style="background:#111520;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:24px;box-sizing:border-box">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:44px;height:44px;border-radius:12px;background:${card.color}22;color:${card.color};font-size:22px;display:flex;align-items:center;justify-content:center">${card.icon}</div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--t1)">${card.title}</div>
+        <div style="font-size:11px;color:var(--t3)">${card.desc}</div>
+      </div>
+      <button onclick="document.getElementById('learn-overlay')?.remove()" style="margin-left:auto;background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer">×</button>
+    </div>
+
+    <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;color:var(--t2);line-height:1.6">
+      ${card.content}
+    </div>
+
+    <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px">Quick Quiz — earn ${card.xp} XP</div>
+    <div id="quiz-container-${id}"></div>
+
+    <div id="quiz-result-${id}" style="display:none;text-align:center;padding:16px 0">
+      <div style="font-size:28px;margin-bottom:8px">🎉</div>
+      <div style="font-size:15px;font-weight:700;color:#22d87a">+${card.xp} XP earned!</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:4px">Lesson complete</div>
+    </div>
+  </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.onclick = e => { if(e.target===overlay) overlay.remove(); };
+
+  renderQuiz(id, 0, 0, isDone);
+}
+
+function renderQuiz(cardId, qIdx, score, alreadyDone) {
+  const card = LEARN_DATA.find(c=>c.id===cardId);
+  const container = $('quiz-container-'+cardId);
+  if(!container || !card) return;
+
+  if(alreadyDone || qIdx >= card.quiz.length) {
+    // Show result
+    container.innerHTML = '';
+    const resultEl = $('quiz-result-'+cardId);
+    if(resultEl) resultEl.style.display = '';
+    if(!alreadyDone) {
+      const done = getLearnDone();
+      if(!done.includes(cardId)) {
+        done.push(cardId);
+        S.set(LEARN_DONE_KEY, done);
+        const xp = getLearnXP() + card.xp;
+        S.set(LEARN_XP_KEY, xp);
+        renderLearnView();
+        // Add XP notification
+        generateNotifications();
+      }
+    }
+    return;
+  }
+
+  const q = card.quiz[qIdx];
+  container.innerHTML = `
+    <div style="font-size:12px;color:var(--t3);margin-bottom:8px">Question ${qIdx+1} of ${card.quiz.length}</div>
+    <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:14px">${q.q}</div>
+    ${q.opts.map((opt,i) => `<button class="quiz-opt" id="qopt-${cardId}-${i}" onclick="answerQuiz('${cardId}',${qIdx},${i},${q.ans},${score})">${opt}</button>`).join('')}
+  `;
+}
+
+function answerQuiz(cardId, qIdx, chosen, correct, score) {
+  const card = LEARN_DATA.find(c=>c.id===cardId);
+  if(!card) return;
+  const isRight = chosen === correct;
+  // Show feedback
+  for(let i=0; i<card.quiz[qIdx].opts.length; i++) {
+    const btn = $(`qopt-${cardId}-${i}`);
+    if(!btn) continue;
+    btn.disabled = true;
+    if(i === correct) btn.classList.add('correct');
+    else if(i === chosen && !isRight) btn.classList.add('wrong');
+  }
+  const newScore = score + (isRight ? 1 : 0);
+  setTimeout(() => renderQuiz(cardId, qIdx+1, newScore, false), 900);
+}
+
+/* ════════════════════════════════════════════════
+   P4 — WATCHLIST WITH ALERTS (enhanced renderWatchlist)
+   ════════════════════════════════════════════════ */
 
 /* ── REBALANCE ── */
 function renderRebalance(rows, total) {
@@ -2880,6 +3485,25 @@ function generateNotifications() {
       if(gain<=-0.1) notifs.push({ id:'pos-down-'+p.id, type:'danger', icon:'M22 7L13.5 15.5 8.5 10.5 2 17M16 7h6v6', title:`${p.ticker} Down ${Math.round(Math.abs(gain)*100)}%`, body:`${p.ticker} is ${Math.round(Math.abs(gain)*100)}% below your avg cost of $${p.avgCost.toFixed(2)}. Review your position.`, col:'#f87171', ts: now.getTime() });
       else if(gain>=0.2) notifs.push({ id:'pos-up-'+p.id, type:'success', icon:'M22 7L13.5 15.5 8.5 10.5 2 17', title:`${p.ticker} Up ${Math.round(gain*100)}%`, body:`${p.ticker} is ${Math.round(gain*100)}% above your avg cost. Consider reviewing your profit target.`, col:'#00e5b0', ts: now.getTime() });
     });
+  } catch(e){}
+
+  // ── Watchlist price alerts ──
+  try {
+    const walerts = getWatchAlerts();
+    Object.entries(walerts).forEach(([sym, al]) => {
+      const px = (prices[sym]||MOCK_PRICES[sym]||{price:0}).price;
+      if(!px) return;
+      if(al.target>0 && px<=al.target) {
+        notifs.push({ id:'watch-target-'+sym, type:'danger', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', title:`${sym} Hit Your Alert Price`, body:`${sym} is at $${fmtNum(px)} — at or below your alert of $${fmtNum(al.target)}.`, col:'#ff4f6a', ts: now.getTime() });
+      }
+    });
+  } catch(e){}
+
+  // ── Learn XP milestones ──
+  try {
+    const xp = getLearnXP();
+    if(xp>=50)  notifs.push({ id:'learn-50xp',  type:'success', icon:'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', title:'50 XP Earned! 📚', body:'You\'ve learned the basics. Keep going — advanced topics unlock more insights.', col:'#00e5b0', ts: now.getTime() });
+    if(xp>=150) notifs.push({ id:'learn-150xp', type:'success', icon:'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', title:'150 XP — Investor Level! 🎓', body:'You\'ve mastered core investing concepts. Try applying them in Paper Trade.', col:'#00e5b0', ts: now.getTime() });
   } catch(e){}
 
   // ── Default welcome notif if nothing else ──
@@ -3190,7 +3814,8 @@ function closeGrowthPlay() {
 const VIEW_TITLES = {
   overview:'Overview', budget:'Budget', positions:'Positions', signals:'Signals',
   analytics:'Analytics', dividends:'Dividends', heatmap:'Heatmap',
-  watchlist:'Watchlist', rebalance:'Rebalance', coach:'AI Coach', settings:'Settings'
+  watchlist:'Watchlist', rebalance:'Rebalance', coach:'AI Coach', settings:'Settings',
+  paper:'Paper Trade', learn:'Learn'
 };
 
 function showView(name, navEl) {
@@ -3216,6 +3841,8 @@ function showView(name, navEl) {
   if(name==='positions') renderFullPositions();
   if(name==='signals')   { const {rows}=computedPositions(); renderSignals(rows); }
   if(name==='settings')  renderProfileGrid();
+  if(name==='paper')     renderPaperView();
+  if(name==='learn')     renderLearnView();
 }
 
 /* ── SIDEBAR TOGGLE ── */
@@ -3922,8 +4549,47 @@ async function sendCoachMsg(msg) {
   msgs.scrollTop = msgs.scrollHeight;
 
   const { rows, total } = computedPositions();
-  const context = `Portfolio (${rows.length} positions, total $${fmtNum(total)}): ${rows.map(r=>`${r.ticker} ${r.shares}sh @$${r.avgCost} cost, now ${fmtPct(r.gainPct)} gain, weight ${r.weight.toFixed(1)}%`).join('; ')}.`;
-  const systemPrompt = `You are APEX AI, an expert, direct portfolio analyst. ${context} Answer concisely (2-4 sentences). Be specific and data-driven. No disclaimers.`;
+  const budget    = S.get('budget') || {};
+  const goals     = (budget.goals || []).slice(0,5);
+  const income    = (budget.income||[]).reduce((s,i)=>s+(+i.amount||0),0);
+  const expenses  = (budget.expenses||[]).reduce((s,e)=>s+(+e.amount||0),0);
+  const watchAlerts = (S.get('watch_alerts') || {});
+  const tradeLogs = getTradeLogs().slice(-10);
+  const paperPos  = getPaperPositions();
+  const learnXP   = S.get('learn_xp') || 0;
+
+  const posCtx = rows.length
+    ? rows.map(r=>`${r.ticker}: ${r.shares}sh, avg cost $${fmtNum(r.avgCost)}, now $${fmtNum(r.price||0)}, P&L ${fmtPct(r.gainPct)} (${r.gainPct>=0?'+':''}${fmtNum(r.gain)}), weight ${r.weight.toFixed(1)}%`).join('\n')
+    : 'No real positions yet.';
+
+  const budgetCtx = income > 0
+    ? `Monthly income $${fmtNum(income)}, expenses $${fmtNum(expenses)}, savings rate ${((1-expenses/income)*100).toFixed(0)}%.`
+    : 'No budget data.';
+
+  const goalsCtx = goals.length
+    ? goals.map(g=>`${g.label}: $${fmtNum(+g.saved||0)}/$${fmtNum(+g.target||0)} (${g.target>0?((+g.saved/+g.target)*100).toFixed(0):0}% funded)`).join(', ')
+    : 'No savings goals set.';
+
+  const paperCtx = paperPos.length
+    ? 'Paper trades open: ' + paperPos.map(p=>`${p.ticker} x${p.shares} @$${fmtNum(p.entryPrice)}`).join(', ')
+    : '';
+
+  const recentTrades = tradeLogs.length
+    ? 'Recent trades: ' + tradeLogs.map(t=>`${t.type.toUpperCase()} ${t.ticker} x${t.shares} @$${fmtNum(t.price)}`).join(', ')
+    : '';
+
+  const systemPrompt = [
+    'You are APEX AI, a sharp, direct personal finance and investment analyst. Answer in 2-4 sentences max. Be specific. Use the user\'s real data below. No generic disclaimers.',
+    '',
+    `PORTFOLIO (total $${fmtNum(total)}):`,
+    posCtx,
+    '',
+    `BUDGET: ${budgetCtx}`,
+    `GOALS: ${goalsCtx}`,
+    paperCtx,
+    recentTrades,
+    `Learning XP: ${learnXP} pts`
+  ].filter(Boolean).join('\n');
 
   let reply = '';
   try {
@@ -5165,6 +5831,9 @@ function updatePinSettingsUI() {
   renderAll();
   renderFullPositions();
   renderQuickPrompts();
+
+  // Snapshot portfolio value on load (seeds perf chart history)
+  snapPortfolioValue();
 
   // Attempt live price fetch
   fetchPrices();
