@@ -776,8 +776,10 @@ html, body {
 #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
 /* ── MOBILE ── */
-@media(max-width: 640px) {
-  #sidebar { display: none; }
+@media(max-width: 767px) {
+  #sidebar { display: none !important; }
+  #main { width: 100%; min-width: 0; box-sizing: border-box; }
+  #views { width: 100%; }
   #mobile-nav {
     display: flex !important;
     position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
@@ -792,7 +794,6 @@ html, body {
     padding: 6px 10px;
     align-items: center;
   }
-  #main { padding-bottom: 100px; }
 }
 
 #mobile-nav {
@@ -967,14 +968,19 @@ html, body {
    ══════════════════════════════ */
 
 /* Safe-area insets for notched phones (iPhone X+) */
-#app { padding-bottom: env(safe-area-inset-bottom); }
-#mobile-nav {
-  padding-bottom: calc(4px + env(safe-area-inset-bottom));
-  height: calc(56px + env(safe-area-inset-bottom));
+/* #app does NOT get padding-bottom — the floating pill nav sits above home indicator naturally */
+/* Push content below the iOS status bar when running as installed PWA (standalone mode) */
+@media (max-width: 640px) {
+  #main {
+    padding-top: env(safe-area-inset-top);
+    /* Extra bottom clearance so last card clears the floating nav */
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
 }
-/* Push content below the iOS status bar when running as installed PWA */
-@media (max-width: 767px) {
-  #main { padding-top: env(safe-area-inset-top); }
+/* Floating pill nav — no extra height/padding needed; it's already 18px above the home indicator */
+#mobile-nav {
+  /* keep height fixed — safe-area gap is handled by the bottom: 18px positioning */
+  height: 64px;
 }
 
 /* Touch targets — min 44×44px */
@@ -1826,7 +1832,7 @@ html { -webkit-text-size-adjust: 100%; }
           <div class="settings-section">
             <div class="settings-title">About APEX</div>
             <div style="padding:0 14px;font-size:12px;color:var(--t3);line-height:1.6">
-              APEX Portfolio Intelligence <span style="color:var(--acc);font-weight:600">v3.2</span> — offline-ready PWA. All data stays on your device.<br>
+              APEX Portfolio Intelligence <span style="color:var(--acc);font-weight:600">v3.3</span> — offline-ready PWA. All data stays on your device.<br>
               No account required. No cloud. No tracking.<br>
               <span style="color:var(--acc)">✓ Installable</span> — tap your browser menu and choose "Add to Home Screen."
             </div>
