@@ -256,9 +256,9 @@ html, body {
 .view.active { display: block; }
 
 /* ── OVERVIEW VIEW ── */
-.view-pad { padding: 20px; }
-/* Constrain content width on wide desktop monitors */
-.view-pad, .settings-view { max-width: 1280px; margin-left: auto; margin-right: auto; width: 100%; box-sizing: border-box; }
+.view-pad { padding: 20px; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
+/* Named wrapper for views that need explicit centering */
+.content-wrap { width: 100%; box-sizing: border-box; }
 
 /* Hero metrics row */
 .hero-row {
@@ -686,7 +686,7 @@ html, body {
 .watch-mini { margin-top: 8px; height: 36px; }
 
 /* ── SETTINGS VIEW ── */
-.settings-view { padding: 20px; max-width: 700px; }
+.settings-view { padding: 20px; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
 .settings-section { margin-bottom: 24px; }
 .settings-title {
   font-size: 11px; color: var(--t3); letter-spacing: .14em;
@@ -811,9 +811,7 @@ html, body {
   }
 }
 
-#mobile-nav {
-  display: none; align-items: stretch;
-}
+#mobile-nav { display: none; }
 .mob-tab {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 3px;
@@ -992,12 +990,6 @@ html, body {
     padding-bottom: calc(90px + env(safe-area-inset-bottom));
   }
 }
-/* Floating pill nav — no extra height/padding needed; it's already 18px above the home indicator */
-#mobile-nav {
-  /* keep height fixed — safe-area gap is handled by the bottom: 18px positioning */
-  height: 64px;
-}
-
 /* Touch targets — min 44×44px */
 .nav-item, .mob-tab, .btn, .panel-action, .toggle, .nav-ic {
   -webkit-tap-highlight-color: transparent;
@@ -1355,6 +1347,7 @@ html { -webkit-text-size-adjust: 100%; }
       <!-- ── OVERVIEW ── -->
       <div class="view active" id="v-overview">
         <div class="view-pad">
+        <div class="content-wrap">
 
           <!-- Hero metric cards -->
           <div class="hero-row" id="hero-row">
@@ -1456,6 +1449,7 @@ html { -webkit-text-size-adjust: 100%; }
 
             </div>
           </div>
+        </div><!-- end content-wrap -->
         </div>
       </div><!-- end overview -->
 
@@ -1676,6 +1670,7 @@ html { -webkit-text-size-adjust: 100%; }
       <!-- ── SETTINGS ── -->
       <div class="view" id="v-settings">
         <div class="settings-view">
+        <div class="content-wrap">
 
           <!-- USER PROFILES -->
           <div class="settings-section">
@@ -1829,7 +1824,7 @@ html { -webkit-text-size-adjust: 100%; }
           <div class="settings-section">
             <div class="settings-title">About APEX</div>
             <div style="padding:0 14px;font-size:12px;color:var(--t3);line-height:1.6">
-              APEX Portfolio Intelligence <span style="color:var(--acc);font-weight:600">v3.6</span> — offline-ready PWA. All data stays on your device.<br>
+              APEX Portfolio Intelligence <span style="color:var(--acc);font-weight:600">v3.7</span> — offline-ready PWA. All data stays on your device.<br>
               No account required. No cloud. No tracking.<br>
               <span style="color:var(--acc)">✓ Installable</span> — tap your browser menu and choose "Add to Home Screen."
             </div>
@@ -1853,6 +1848,7 @@ html { -webkit-text-size-adjust: 100%; }
             </div>
           </div>
 
+        </div><!-- end content-wrap -->
         </div>
       </div>
 
