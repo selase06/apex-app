@@ -780,13 +780,26 @@ html, body {
   #sidebar { display: none !important; }
   #main { width: 100%; min-width: 0; box-sizing: border-box; overflow-x: hidden; }
   #views { width: 100%; overflow-x: hidden; }
-  .view { width: 100%; box-sizing: border-box; }
+  .view { width: 100%; box-sizing: border-box; overflow-x: hidden; }
   .settings-view { max-width: 100% !important; width: 100%; margin: 0; padding: 16px; box-sizing: border-box; }
-  .view-pad { width: 100%; box-sizing: border-box; }
+  .view-pad { width: 100%; box-sizing: border-box; padding: 14px; }
+  /* Panel header: stack title above actions on very narrow screens */
+  .panel-header { flex-wrap: wrap; gap: 4px; }
+  /* Table: hide less critical columns on mobile */
+  .pos-table .hide-mobile { display: none !important; }
+  /* Keep table from blowing out viewport */
+  .pos-table { table-layout: fixed; width: 100%; }
+  .pos-th, .pos-td { padding: 8px 6px; font-size: 8px; }
+  .pos-th:first-child, .pos-td:first-child { width: 28%; }
+  /* Nav pill: match Instagram — flush to bottom, full width minus small margin */
+  #mobile-nav {
+    bottom: 8px !important;
+    width: calc(100% - 24px) !important;
+  }
   #mobile-nav {
     display: flex !important;
-    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
-    width: calc(100% - 32px); max-width: 420px;
+    position: fixed; bottom: calc(8px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+    width: calc(100% - 24px); max-width: 480px;
     height: 64px; z-index: 200;
     background: rgba(22,24,30,.96);
     backdrop-filter: blur(28px) saturate(1.4);
@@ -1394,8 +1407,8 @@ html { -webkit-text-size-adjust: 100%; }
                       <th class="pos-th r">Price</th>
                       <th class="pos-th r">Value</th>
                       <th class="pos-th r">Day</th>
-                      <th class="pos-th r">Total Return</th>
-                      <th class="pos-th r">Allocation</th>
+                      <th class="pos-th r">Return</th>
+                      <th class="pos-th r hide-mobile">Alloc</th>
                     </tr>
                   </thead>
                   <tbody id="pos-table-body">
@@ -1817,7 +1830,7 @@ html { -webkit-text-size-adjust: 100%; }
           <div class="settings-section">
             <div class="settings-title">About APEX</div>
             <div style="padding:0 14px;font-size:12px;color:var(--t3);line-height:1.6">
-              APEX Portfolio Intelligence <span style="color:var(--acc);font-weight:600">v3.3</span> — offline-ready PWA. All data stays on your device.<br>
+              APEX Portfolio Intelligence <span style="color:var(--acc);font-weight:600">v3.5</span> — offline-ready PWA. All data stays on your device.<br>
               No account required. No cloud. No tracking.<br>
               <span style="color:var(--acc)">✓ Installable</span> — tap your browser menu and choose "Add to Home Screen."
             </div>
@@ -2511,7 +2524,7 @@ function renderPositionsTable(rows, total) {
       <td class="pos-td r">
         <span class="pos-chg ${clsChg(r.gainPct)}">${fmtPct(r.gainPct)}</span>
       </td>
-      <td class="pos-td r">
+      <td class="pos-td r hide-mobile">
         <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
           <span style="font-size:10px;color:var(--t3)">${r.weight.toFixed(1)}%</span>
           <div class="pos-bar-wrap"><div class="pos-bar-fill" style="width:${r.weight}%;background:var(--${r.weight>20?'acc':'acc'})"></div></div>
