@@ -1817,7 +1817,7 @@ html { -webkit-text-size-adjust: 100%; }
 <!-- Mobile nav — Instagram pill style -->
 <nav id="mobile-nav">
   <!-- HOME -->
-  <button class="mob-tab active" onclick="showView('overview',this)" id="mob-overview">
+  <button class="mob-tab active" onclick="openHomeSheet(this)" id="mob-overview">
     <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
     HOME
   </button>
@@ -1849,6 +1849,37 @@ html { -webkit-text-size-adjust: 100%; }
     PROFILE
   </button>
 </nav>
+
+<!-- HOME BOTTOM SHEET — all views grid -->
+<div id="home-sheet" style="
+  display:none;position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+" onclick="closeHomeSheet()">
+  <div id="home-sheet-panel" onclick="event.stopPropagation()" style="
+    position:absolute;bottom:0;left:0;right:0;
+    background:#111520;
+    border-radius:20px 20px 0 0;
+    padding:0 0 calc(100px + env(safe-area-inset-bottom));
+    transform:translateY(100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+  ">
+    <!-- Handle -->
+    <div style="display:flex;justify-content:center;padding:12px 0 4px">
+      <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18)"></div>
+    </div>
+    <!-- Title -->
+    <div style="padding:4px 20px 16px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:18px;font-weight:700;color:#fff">Overview</span>
+      <button onclick="closeHomeSheet();showView('overview',null)" style="
+        background:#00e5b0;color:#0d1017;border:none;border-radius:10px;
+        padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;
+      ">Go to Dashboard</button>
+    </div>
+    <!-- Grid of all views -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px">
+    </div>
+  </div>
+</div>
 
 <!-- PROFILE FULL-SCREEN SHEET (Instagram Settings style) -->
 <div id="profile-sheet" style="
@@ -3676,6 +3707,8 @@ function openProfileSheet(tabEl) {
         {name:'watchlist', label:'Watchlist',         hint:'',   col:'#6366f1', icon:'M11 11m-7 0a7 7 0 1014 0 7 7 0 00-14 0M21 21l-4.35-4.35'},
         {name:'heatmap',   label:'Sector Heatmap',    hint:'',   col:'#ec4899', icon:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z'},
         {name:'rebalance', label:'Rebalance',         hint:'',   col:'#14b8a6', icon:'M17 2l4 4-4 4M3 11V9a4 4 0 014-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 01-4 4H3'},
+        {name:'paper',     label:'Paper Trade',       hint:'SIM',col:'#f59e0b', icon:'M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-3M9 15h3l9-9a1.5 1.5 0 00-3-3l-9 9zM16 5l3 3'},
+        {name:'learn',     label:'Learn',             hint:'XP', col:'#10b981', icon:'M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z'},
       ]
     },
     {
@@ -3726,6 +3759,60 @@ function closeProfileSheet(e) {
   const homeBtn = document.getElementById('mob-overview');
   if(homeBtn) homeBtn.classList.add('active');
 }
+function openHomeSheet(tabEl) {
+  document.querySelectorAll('.mob-tab').forEach(n=>n.classList.remove('active'));
+  if(tabEl) tabEl.classList.add('active');
+
+  const items = [
+    {name:'overview',  label:'Dashboard',    col:'#00e5b0', icon:'M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5zM9 21V12h6v9'},
+    {name:'budget',    label:'Budget',       col:'#833ab4', icon:'M2 5h20v14H2zM2 10h20M12 15.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z'},
+    {name:'analytics', label:'Analytics',    col:'#00b894', icon:'M22 12h-4l-3 9L9 3l-3 9H2'},
+    {name:'dividends', label:'Dividends',    col:'#f59e0b', icon:'M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6'},
+    {name:'heatmap',   label:'Heatmap',      col:'#ec4899', icon:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z'},
+    {name:'watchlist', label:'Watchlist',    col:'#6366f1', icon:'M11 11m-7 0a7 7 0 1014 0 7 7 0 00-14 0M21 21l-4.35-4.35'},
+    {name:'rebalance', label:'Rebalance',    col:'#14b8a6', icon:'M17 2l4 4-4 4M3 11V9a4 4 0 014-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 01-4 4H3'},
+    {name:'paper',     label:'Paper Trade',  col:'#f59e0b', icon:'M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-3M9 15h3l9-9a1.5 1.5 0 00-3-3l-9 9zM16 5l3 3'},
+    {name:'learn',     label:'Learn',        col:'#10b981', icon:'M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z'},
+  ];
+
+  const grid = document.querySelector('#home-sheet-panel > div:last-child');
+  grid.innerHTML = items.map(item=>`
+    <button onclick="closeHomeSheet();showView('${item.name}',null)" style="
+      display:flex;flex-direction:column;align-items:center;gap:8px;
+      padding:14px 8px;border-radius:14px;border:none;cursor:pointer;
+      background:rgba(255,255,255,.05);
+      transition:background .15s;
+    "
+    onmouseenter="this.style.background='rgba(255,255,255,.10)'"
+    onmouseleave="this.style.background='rgba(255,255,255,.05)'">
+      <div style="
+        width:44px;height:44px;border-radius:12px;
+        background:${item.col}22;border:1.5px solid ${item.col}55;
+        display:flex;align-items:center;justify-content:center;
+      ">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${item.col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="${item.icon}"/>
+        </svg>
+      </div>
+      <span style="font-size:11px;font-weight:600;color:rgba(255,255,255,.75);text-align:center;line-height:1.2">${item.label}</span>
+    </button>`).join('');
+
+  const sheet = document.getElementById('home-sheet');
+  sheet.style.display = 'block';
+  requestAnimationFrame(()=>{
+    document.getElementById('home-sheet-panel').style.transform = 'translateY(0)';
+  });
+}
+
+function closeHomeSheet() {
+  const panel = document.getElementById('home-sheet-panel');
+  panel.style.transform = 'translateY(100%)';
+  setTimeout(()=>{ document.getElementById('home-sheet').style.display='none'; }, 300);
+  document.querySelectorAll('.mob-tab').forEach(n=>n.classList.remove('active'));
+  const homeBtn = document.getElementById('mob-overview');
+  if(homeBtn) homeBtn.classList.add('active');
+}
+
 function cardRipple(e) {
   const card = e.currentTarget;
   const rect = card.getBoundingClientRect();
