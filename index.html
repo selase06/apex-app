@@ -1740,8 +1740,15 @@ html { -webkit-text-size-adjust: 100%; }
     AI COACH
   </button>
   <!-- PROFILE (opens bottom sheet with all sections) -->
-  <button class="mob-tab" onclick="openProfileSheet(this)" id="mob-profile">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+  <button class="mob-tab" onclick="openProfileSheet(this)" id="mob-profile" style="position:relative">
+    <span style="position:relative;display:inline-block">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <circle cx="12" cy="9" r="3.5"/>
+        <path d="M5.5 20.5c.8-3 3.5-5 6.5-5s5.7 2 6.5 5"/>
+      </svg>
+      <span id="profile-notif-dot" style="position:absolute;bottom:1px;right:0px;width:7px;height:7px;border-radius:50%;background:#ff3040;border:1.5px solid #0d1017;display:block"></span>
+    </span>
     PROFILE
   </button>
 </nav>
