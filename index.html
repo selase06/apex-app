@@ -780,7 +780,7 @@ html, body {
 /* ── MOBILE ── */
 @media(max-width: 767px) {
   #sidebar { display: none !important; }
-  #main { width: 100%; min-width: 0; box-sizing: border-box; overflow-x: hidden; }
+  #main { width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; }
   #views { width: 100%; overflow-x: hidden; }
   .view { width: 100%; box-sizing: border-box; overflow-x: hidden; }
   .settings-view { max-width: 100% !important; width: 100%; margin: 0; padding: 16px; box-sizing: border-box; }
@@ -793,21 +793,37 @@ html, body {
   .pos-table { table-layout: fixed; width: 100%; }
   .pos-th, .pos-td { padding: 8px 6px; font-size: 8px; }
   .pos-th:first-child, .pos-td:first-child { width: 28%; }
+
+  /* ── Topbar: clamp to viewport, hide ticker, icon-only buttons ── */
+  #topbar {
+    width: 100%; min-width: 0; overflow: hidden;
+    padding: 0 12px; gap: 8px;
+  }
+  #ticker-bar { display: none !important; }
+  .tb-btn { padding: 6px 10px; font-size: 10px; }
+  /* Truncate the title if needed */
+  .tb-title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ── Nav pill: flush to bottom edge ── */
   #mobile-nav {
     display: flex !important;
     position: fixed;
-    bottom: max(env(safe-area-inset-bottom), 4px);
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom);
     left: 50%; transform: translateX(-50%);
     width: calc(100% - 24px); max-width: 480px;
-    height: 64px; z-index: 200;
+    min-height: 64px; z-index: 200;
     background: rgba(22,24,30,.96);
     backdrop-filter: blur(28px) saturate(1.4);
     -webkit-backdrop-filter: blur(28px) saturate(1.4);
-    border-radius: 32px;
+    border-radius: 32px 32px 0 0;
     border: 1px solid rgba(255,255,255,.10);
-    box-shadow: 0 8px 32px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
-    padding: 6px 10px;
-    align-items: center;
+    border-bottom: none;
+    box-shadow: 0 -4px 24px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.35);
+    padding-top: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+    align-items: flex-start;
   }
 }
 
@@ -981,13 +997,12 @@ html, body {
    ══════════════════════════════ */
 
 /* Safe-area insets for notched phones (iPhone X+) */
-/* #app does NOT get padding-bottom — the floating pill nav sits above home indicator naturally */
-/* Push content below the iOS status bar when running as installed PWA (standalone mode) */
-@media (max-width: 640px) {
+/* Nav pill is now flush to bottom with padding-bottom: env(safe-area-inset-bottom) built in */
+@media (max-width: 767px) {
   #main {
     padding-top: env(safe-area-inset-top);
-    /* Extra bottom clearance so last card clears the floating nav */
-    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+    /* Bottom clearance: nav height (64px) + safe-area + extra breathing room */
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 }
 /* Touch targets — min 44×44px */
