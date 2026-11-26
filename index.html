@@ -978,6 +978,7 @@ html { -webkit-text-size-adjust: 100%; }
   animation: slideUp 0.3s ease;
 }
 @keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+@keyframes slideUpModal { from { transform:translateY(100%); } to { transform:translateY(0); } }
 #pwa-banner .pwa-icon { font-size: 28px; flex-shrink: 0; }
 #pwa-banner .pwa-text { flex: 1; }
 #pwa-banner .pwa-title { font-size: 13px; font-weight: 700; color: var(--t1); }
@@ -2933,6 +2934,77 @@ function cardRipple(e) {
   setTimeout(() => rip.remove(), 520);
 }
 
+/* ── GROWTH PLAY DETAIL MODAL ── */
+const GROWTH_PLAYS_DATA = [
+  { svgP:'M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z', title:'Overtime', range:'$200–600/mo', col:'#fbbf24', grad:'135deg,#f59e0b22,#92400e18',
+    desc:'2–3 extra shifts/mo compounds fast.',
+    detail:'Picking up 2–3 extra shifts per month is one of the fastest ways to accelerate savings. At your pay rate, each extra shift adds directly to your investment capacity. Even $200/mo invested consistently over 5 years at 7% grows to over $14,000.',
+    steps:['Talk to your manager about available OT openings','Set a target: 2 extra shifts per pay period','Automate the extra earnings directly to Roth IRA or brokerage','Track cumulative OT income in the Income tab'] },
+  { svgP:'M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22', title:'HR Consulting', range:'$300–800/mo', col:'#a78bfa', grad:'135deg,#7c3aed22,#4c1d9518',
+    desc:'ADP/compliance expertise is valuable to SMBs.',
+    detail:'Your ADP, I-9/E-Verify, and multi-branch payroll expertise is rare outside of enterprise HR. Small businesses pay $50–150/hr for a few hours a month to get this right. Start with one local client and grow from there.',
+    steps:['Define your offer: payroll setup, I-9 audit, or ADP training','Set a rate: $60–100/hr is competitive for SMB HR consulting','Find your first client via LinkedIn or local business networks','Use a simple contract and invoice monthly'] },
+  { svgP:'M22 7L13.5 15.5 8.5 10.5 2 17M16 7h6v6', title:'Dividend ETFs', range:'$50–200/mo', col:'#00e5b0', grad:'135deg,#00e5b022,#065f4618',
+    desc:'SCHD/VYM — time is the edge here.',
+    detail:'Dividend ETFs like SCHD and VYM pay quarterly dividends that you can reinvest or use as passive income. The earlier you start, the more compounding works in your favor. Even $5,000 invested today at a 3.5% yield returns $175/yr — and grows.',
+    steps:['Open or fund your Fidelity brokerage or Roth IRA','Buy SCHD or VYM — both have strong dividend growth histories','Enable DRIP (dividend reinvestment) for compounding','Review and add monthly to accelerate position size'] },
+  { svgP:'M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5zM9 21V12h6v9', title:'Room Rental', range:'$600–1,200/mo', col:'#60a5fa', grad:'135deg,#2563eb22,#1e3a5f18',
+    desc:'Highest single income jump available.',
+    detail:'Renting a room in your home is the single largest immediate income boost you can make. At $600–1,200/mo, that is $7,200–14,400/yr of near-pure profit (after utilities). That alone can fully fund a Roth IRA and accelerate debt payoff.',
+    steps:['Check local rental comps on Zillow/Facebook Marketplace','List on Furnished Finder or Roomies.com for mid-term renters','Draft a simple month-to-month lease','Deposit rental income into a dedicated account and automate investments from it'] },
+  { svgP:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', title:'Benefits Audit', range:'$100–500/mo', col:'#f87171', grad:'135deg,#dc262622,#7f1d1d18',
+    desc:'Maximize 401k match, FSA, HSA.',
+    detail:'Most employees leave hundreds per month on the table by not optimizing benefits. A full 401k match, maxed HSA, and FSA for predictable expenses can be worth $400–500/mo in tax-advantaged gains — money you are already earning but not capturing.',
+    steps:['Confirm your 401k contribution hits the full employer match threshold','Enroll in HSA if on a high-deductible plan — max it ($4,150 single / $8,300 family in 2025)','Use FSA for predictable medical and dependent care costs','Review life and disability coverage to avoid overpaying for coverage you do not need'] },
+];
+
+function openGrowthPlay(idx) {
+  const p = GROWTH_PLAYS_DATA[idx];
+  if(!p) return;
+  let m = document.getElementById('growth-play-modal');
+  if(!m) {
+    m = document.createElement('div');
+    m.id = 'growth-play-modal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)';
+    m.onclick = e => { if(e.target===m) closeGrowthPlay(); };
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `
+    <div style="width:100%;max-width:520px;background:#111520;border-radius:24px 24px 0 0;border-top:1.5px solid rgba(255,255,255,.1);padding:0 0 calc(28px + env(safe-area-inset-bottom));animation:slideUpModal .22s cubic-bezier(.4,0,.2,1)">
+      <div style="display:flex;justify-content:center;padding:10px 0 2px">
+        <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18)"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;padding:16px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)">
+        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(${p.grad});display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="${p.col}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${p.svgP}"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-.02em">${p.title}</div>
+          <div style="font-family:var(--font-mono);font-size:13px;font-weight:900;color:${p.col};margin-top:2px">${p.range}</div>
+        </div>
+        <button onclick="closeGrowthPlay()" style="width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div style="padding:18px 20px 0">
+        <p style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.6;margin:0 0 18px">${p.detail}</p>
+        <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">How to start</div>
+        ${p.steps.map((s,i)=>`
+          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
+            <div style="width:22px;height:22px;border-radius:50%;background:${p.col}22;border:1px solid ${p.col}66;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:800;color:${p.col}">${i+1}</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.5;padding-top:2px">${s}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  m.style.display = 'flex';
+  requestAnimationFrame(()=>{ m.style.opacity='1'; });
+}
+
+function closeGrowthPlay() {
+  const m = document.getElementById('growth-play-modal');
+  if(m) m.style.display = 'none';
+}
+
 /* ── VIEW SWITCHING ── */
 const VIEW_TITLES = {
   overview:'Overview', budget:'Budget', positions:'Positions', signals:'Signals',
@@ -3915,7 +3987,8 @@ function renderBudgetView() {
 
   // ── FINANCE CALENDAR: build days with events ──
   const now = new Date();
-  const year= now.getFullYear(), month=now.getMonth();
+  if(typeof window._calYear==='undefined'){ window._calYear=now.getFullYear(); window._calMonth=now.getMonth(); }
+  const year= window._calYear, month=window._calMonth;
   const daysInMonth = new Date(year,month+1,0).getDate();
   const firstDay    = new Date(year,month,1).getDay();
   const monthNames  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -4063,7 +4136,15 @@ function renderBudgetView() {
     <!-- ══ ROW 3: FINANCE CALENDAR ══ -->
     <div style="background:var(--bg2);border:1px solid var(--glass-border);border-radius:20px;margin-bottom:16px;overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid var(--glass-border)">
-        <span class="panel-title">Finance Calendar — ${monthNames[month]} ${year}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="window._calMonth--;if(window._calMonth<0){window._calMonth=11;window._calYear--;}renderBudgetView();" style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="panel-title" style="min-width:140px;text-align:center">Finance Calendar — ${monthNames[month]} ${year}</span>
+          <button onclick="window._calMonth++;if(window._calMonth>11){window._calMonth=0;window._calYear++;}renderBudgetView();" style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
         <div style="display:flex;align-items:center;gap:10px">
           <span style="display:inline-flex;align-items:center;gap:4px;font-size:9px;color:var(--t3)"><span style="width:6px;height:6px;border-radius:50%;background:#00e5b0;display:inline-block"></span>Income</span>
           <span style="display:inline-flex;align-items:center;gap:4px;font-size:9px;color:var(--t3)"><span style="width:6px;height:6px;border-radius:50%;background:#f87171;display:inline-block"></span>Bill</span>
@@ -4128,7 +4209,7 @@ function renderBudgetView() {
           { svgP:'M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5zM9 21V12h6v9', title:'Room Rental',   range:'$600–1,200/mo', col:'#60a5fa', grad:'135deg,#2563eb22,#1e3a5f18', desc:'Highest single income jump available.' },
           { svgP:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', title:'Benefits Audit',range:'$100–500/mo',   col:'#f87171', grad:'135deg,#dc262622,#7f1d1d18', desc:'Maximize 401k match, FSA, HSA.' },
         ].map((p,i)=>`
-          <div class="growth-card" onclick="cardRipple(event)" style="
+          <div class="growth-card" onclick="cardRipple(event);openGrowthPlay(${i})" style="
             position:relative;overflow:hidden;border-radius:16px;padding:16px 14px 14px;cursor:pointer;
             background:linear-gradient(var(--bg2),var(--bg2)) padding-box,
               linear-gradient(${p.grad}) border-box;
