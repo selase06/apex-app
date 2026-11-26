@@ -1746,25 +1746,55 @@ html { -webkit-text-size-adjust: 100%; }
   </button>
 </nav>
 
-<!-- PROFILE BOTTOM SHEET -->
+<!-- PROFILE FULL-SCREEN SHEET (Instagram Settings style) -->
 <div id="profile-sheet" style="
-  display:none;position:fixed;inset:0;z-index:300;
-  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
-" onclick="closeProfileSheet(event)">
-  <div id="profile-sheet-inner" onclick="event.stopPropagation()" style="
-    position:absolute;bottom:0;left:0;right:0;
-    background:#14161e;
-    border-radius:28px 28px 0 0;
-    border-top:1px solid rgba(255,255,255,.10);
-    padding:12px 0 calc(env(safe-area-inset-bottom)+20px);
-    box-shadow:0 -8px 40px rgba(0,0,0,.6);
-    transform:translateY(100%);
-    transition:transform .32s cubic-bezier(.32,0,.67,1);
+  display:none;position:fixed;inset:0;z-index:400;
+  background:#0d1017;
+  transform:translateX(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+">
+  <!-- Header bar -->
+  <div style="
+    position:sticky;top:0;z-index:10;
+    display:flex;align-items:center;gap:12px;
+    padding:14px 16px calc(14px + env(safe-area-inset-top));
+    padding-top:calc(14px + env(safe-area-inset-top));
+    background:#0d1017;
+    border-bottom:1px solid rgba(255,255,255,.07);
   ">
-    <div style="width:36px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;margin:0 auto 20px"></div>
-    <div style="padding:0 20px 10px;font-size:11px;font-weight:800;letter-spacing:.08em;color:rgba(255,255,255,.35)">NAVIGATE</div>
-    <div id="profile-sheet-links"></div>
+    <button onclick="closeProfileSheet()" style="
+      width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+      background:rgba(255,255,255,.10);color:#fff;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    ">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span style="font-size:17px;font-weight:700;color:#fff;letter-spacing:-.01em">Profile &amp; Settings</span>
   </div>
+
+  <!-- Profile card -->
+  <div id="profile-sheet-card" style="
+    display:flex;align-items:center;gap:14px;
+    padding:20px 20px 16px;
+    border-bottom:1px solid rgba(255,255,255,.07);
+  ">
+    <div style="
+      width:60px;height:60px;border-radius:50%;flex-shrink:0;
+      background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);
+      display:flex;align-items:center;justify-content:center;
+      font-size:24px;font-weight:800;color:#fff;
+    " id="profile-avatar-letter">K</div>
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#fff" id="profile-sheet-name">Koffi</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:2px">Default Profile</div>
+    </div>
+    <svg style="margin-left:auto;color:rgba(255,255,255,.3)" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+
+  <!-- Sections rendered by JS -->
+  <div id="profile-sheet-body" style="padding-bottom:calc(100px + env(safe-area-inset-bottom))"></div>
 </div>
 
 <!-- MODAL OVERLAY -->
@@ -2763,40 +2793,81 @@ function updateTimestamp() {
 function openProfileSheet(tabEl) {
   document.querySelectorAll('.mob-tab').forEach(n=>n.classList.remove('active'));
   if(tabEl) tabEl.classList.add('active');
-  const sheet = document.getElementById('profile-sheet');
-  const inner = document.getElementById('profile-sheet-inner');
-  // Build links
-  const links = [
-    {name:'budget',    icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>', label:'Budget'},
-    {name:'analytics', icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', label:'Analytics'},
-    {name:'watchlist', icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>', label:'Watchlist'},
-    {name:'dividends', icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>', label:'Dividends'},
-    {name:'rebalance', icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4l16 16M20 4L4 20"/></svg>', label:'Rebalance'},
-    {name:'heatmap',   icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>', label:'Heatmap'},
-    {name:'settings',  icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>', label:'Settings'},
+
+  // Update avatar letter from active profile name
+  const pName = (currentProfile||'Default').charAt(0).toUpperCase();
+  const avatarEl = document.getElementById('profile-avatar-letter');
+  if(avatarEl) avatarEl.textContent = pName;
+  const nameEl = document.getElementById('profile-sheet-name');
+  if(nameEl) nameEl.textContent = currentProfile||'Default';
+
+  // Build grouped sections — Instagram Settings style
+  const sections = [
+    {
+      label: 'Portfolio',
+      rows: [
+        {name:'budget',    label:'Budget & Finance',  hint:'',        icon:'M2 5h20v14H2zM2 10h20M12 15.5a1.5 1.5 0 100-3'},
+        {name:'positions', label:'My Positions',      hint:'',        icon:'M22 7L13.5 15.5 8.5 10.5 2 17M16 7h6v6'},
+        {name:'analytics', label:'Analytics',         hint:'',        icon:'M22 12h-4l-3 9L9 3l-3 9H2'},
+        {name:'dividends', label:'Dividends',         hint:'',        icon:'M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6'},
+      ]
+    },
+    {
+      label: 'Research',
+      rows: [
+        {name:'watchlist', label:'Watchlist',         hint:'',        icon:'M11 11m-7 0a7 7 0 1014 0 7 7 0 00-14 0M21 21l-4.35-4.35'},
+        {name:'heatmap',   label:'Sector Heatmap',    hint:'',        icon:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z'},
+        {name:'rebalance', label:'Rebalance',         hint:'',        icon:'M17 2l4 4-4 4M3 11V9a4 4 0 014-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 01-4 4H3'},
+      ]
+    },
+    {
+      label: 'Account',
+      rows: [
+        {name:'settings',  label:'Settings',          hint:'',        icon:'M12 12m-3 0a3 3 0 106 0 3 3 0 00-6 0M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42'},
+      ]
+    }
   ];
-  document.getElementById('profile-sheet-links').innerHTML = links.map(l=>`
-    <div onclick="closeProfileSheet();showView('${l.name}',null)" style="
-      display:flex;align-items:center;gap:14px;padding:14px 24px;cursor:pointer;
-      transition:background .15s;border-radius:0;color:var(--t1);
-    " onmouseenter="this.style.background='rgba(255,255,255,.05)'" onmouseleave="this.style.background='none'">
-      <span style="color:var(--acc);opacity:.85">${l.icon}</span>
-      <span style="font-size:15px;font-weight:600">${l.label}</span>
-      <svg style="margin-left:auto;opacity:.3" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+
+  document.getElementById('profile-sheet-body').innerHTML = sections.map(sec=>`
+    <div>
+      <div style="padding:22px 20px 8px;font-size:12px;font-weight:600;color:rgba(255,255,255,.35);letter-spacing:.04em">${sec.label}</div>
+      ${sec.rows.map((r,i,arr)=>`
+        <div onclick="closeProfileSheet();setTimeout(()=>showView('${r.name}',null),30)" style="
+          display:flex;align-items:center;gap:16px;padding:14px 20px;cursor:pointer;
+          border-top:${i===0?'1px solid rgba(255,255,255,.07)':'none'};
+          border-bottom:1px solid rgba(255,255,255,.07);
+          background:transparent;transition:background .12s;
+        "
+        onmouseenter="this.style.background='rgba(255,255,255,.04)'"
+        onmouseleave="this.style.background='transparent'">
+          <div style="
+            width:36px;height:36px;border-radius:10px;flex-shrink:0;
+            background:rgba(255,255,255,.08);
+            display:flex;align-items:center;justify-content:center;
+          ">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="${r.icon}"/>
+            </svg>
+          </div>
+          <span style="font-size:15px;font-weight:500;color:#fff;flex:1">${r.label}</span>
+          ${r.hint?`<span style="font-size:13px;color:rgba(255,255,255,.35);margin-right:6px">${r.hint}</span>`:''}
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>`).join('')}
     </div>`).join('');
+
+  const sheet = document.getElementById('profile-sheet');
   sheet.style.display = 'block';
-  requestAnimationFrame(()=>{ inner.style.transform='translateY(0)'; });
+  sheet.scrollTop = 0;
+  requestAnimationFrame(()=>{ sheet.style.transform='translateX(0)'; });
 }
 function closeProfileSheet(e) {
-  const inner = document.getElementById('profile-sheet-inner');
   const sheet = document.getElementById('profile-sheet');
-  inner.style.transform='translateY(100%)';
-  setTimeout(()=>{ sheet.style.display='none'; }, 320);
-  // If closed without picking a view, keep HOME active
-  const anyActive = [...document.querySelectorAll('.mob-tab')].some(t=>t.classList.contains('active') && t.id!=='mob-profile');
-  if(!anyActive) {
-    document.getElementById('mob-overview') && document.getElementById('mob-overview').classList.add('active');
-  }
+  sheet.style.transform='translateX(100%)';
+  setTimeout(()=>{ sheet.style.display='none'; }, 300);
+  // Restore HOME active state
+  document.querySelectorAll('.mob-tab').forEach(n=>n.classList.remove('active'));
+  const homeBtn = document.getElementById('mob-overview');
+  if(homeBtn) homeBtn.classList.add('active');
 }
 function cardRipple(e) {
   const card = e.currentTarget;
