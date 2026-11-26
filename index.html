@@ -1906,7 +1906,15 @@ html { -webkit-text-size-adjust: 100%; }
     ">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
-    <span style="font-size:17px;font-weight:600;color:#fff">Settings &amp; Activity</span>
+    <span style="font-size:17px;font-weight:600;color:#fff;flex:1">Profile</span>
+    <button onclick="closeProfileSheet();setTimeout(()=>showView('settings',null),30)" style="
+      display:flex;align-items:center;gap:6px;
+      padding:7px 14px;border-radius:10px;border:none;cursor:pointer;
+      background:rgba(255,255,255,.10);color:#fff;font-size:13px;font-weight:600;
+    ">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      Settings
+    </button>
   </div>
 
   <!-- Profile card — Instagram profile style -->
@@ -1953,6 +1961,26 @@ html { -webkit-text-size-adjust: 100%; }
       {val: (()=>{try{const p=JSON.parse(localStorage.getItem('apex_positions')||'[]');return p.length;}catch(e){return'—';}})(), label:'Positions'},
     ].map ? '' : ''}
     <div id="profile-stats-row" style="display:contents"></div>
+  </div>
+
+  <!-- Quick action buttons — always visible -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 16px 0;border-bottom:8px solid rgba(255,255,255,.04)">
+    <button onclick="closeProfileSheet();setTimeout(()=>showView('settings',null),30)" style="
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+      padding:14px 8px;border-radius:14px;border:none;cursor:pointer;
+      background:rgba(255,255,255,.07);color:#fff;
+    ">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#00e5b0" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <span style="font-size:12px;font-weight:600">Settings</span>
+    </button>
+    <button onclick="closeProfileSheet();setTimeout(()=>showView('coach',null),30)" style="
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+      padding:14px 8px;border-radius:14px;border:none;cursor:pointer;
+      background:rgba(255,255,255,.07);color:#fff;
+    ">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#00e5b0" stroke-width="1.8" stroke-linecap="round"><path d="M12 2a7 7 0 017 7c0 3.5-2.5 6.4-5.8 7.2L12 22l-1.2-5.8C7.5 15.4 5 12.5 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5" fill="#00e5b0" stroke="none"/></svg>
+      <span style="font-size:12px;font-weight:600">AI Coach</span>
+    </button>
   </div>
 
   <!-- Sections rendered by JS -->
