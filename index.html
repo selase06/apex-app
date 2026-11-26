@@ -164,7 +164,7 @@ html, body {
   width: 3px; border-radius: 0 2px 2px 0;
   background: var(--acc); box-shadow: 0 0 8px rgba(var(--acc-rgb),.5);
 }
-.nav-ic { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.nav-ic { font-size: 15px; flex-shrink: 0; width: 22px; display:flex; align-items:center; justify-content:center; }
 .nav-badge {
   margin-left: auto; background: rgba(var(--acc-rgb),.2);
   color: var(--acc); font-size: 9px; font-weight: 700;
@@ -1200,53 +1200,53 @@ html { -webkit-text-size-adjust: 100%; }
     <div class="sb-nav">
       <div class="sb-section-label">Invest</div>
       <div class="nav-item active" onclick="showView('overview',this)">
-        <span class="nav-ic">⬡</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></span>
         <span>Overview</span>
       </div>
       <div class="nav-item" onclick="showView('budget',this)">
-        <span class="nav-ic">◎</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg></span>
         <span>Budget</span>
         <span class="nav-badge" id="nav-budget-badge" style="background:var(--acc);color:#000">NEW</span>
       </div>
       <div class="nav-item" onclick="showView('positions',this)">
-        <span class="nav-ic">◈</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
         <span>Positions</span>
         <span class="nav-badge" id="nav-pos-count">0</span>
       </div>
       <div class="nav-item" onclick="showView('signals',this)">
-        <span class="nav-ic">◆</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
         <span>Signals</span>
         <span class="nav-badge" id="nav-signal-badge">AI</span>
       </div>
       <div class="nav-item" onclick="showView('analytics',this)">
-        <span class="nav-ic">◉</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
         <span>Analytics</span>
       </div>
       <div class="nav-item" onclick="showView('dividends',this)">
-        <span class="nav-ic">💰</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
         <span>Dividends</span>
       </div>
       <div class="nav-item" onclick="showView('heatmap',this)">
-        <span class="nav-ic">▦</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
         <span>Heatmap</span>
       </div>
       <div class="sb-section-label">Research</div>
       <div class="nav-item" onclick="showView('watchlist',this)">
-        <span class="nav-ic">★</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></span>
         <span>Watchlist</span>
       </div>
       <div class="nav-item" onclick="showView('rebalance',this)">
-        <span class="nav-ic">⚖</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></span>
         <span>Rebalance</span>
       </div>
       <div class="nav-item" onclick="showView('coach',this)">
-        <span class="nav-ic">✦</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 017 7c0 3.5-2.5 6.4-5.8 7.2L12 22l-1.2-5.8C7.5 15.4 5 12.5 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none"/></svg></span>
         <span>AI Coach</span>
         <span class="nav-badge">AI</span>
       </div>
       <div class="sb-section-label">Account</div>
       <div class="nav-item" onclick="showView('settings',this)">
-        <span class="nav-ic">⚙</span>
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
         <span>Settings</span>
       </div>
     </div>
@@ -1724,27 +1724,48 @@ html { -webkit-text-size-adjust: 100%; }
     <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
     HOME
   </button>
-  <!-- BUDGET -->
-  <button class="mob-tab" onclick="showView('budget',this)" id="mob-budget">
-    <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
-    BUDGET
+  <!-- POSITIONS -->
+  <button class="mob-tab" onclick="showView('positions',this)" id="mob-positions">
+    <svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+    POSITIONS
   </button>
-  <!-- SIGNALS / SEND arrow like IG -->
+  <!-- SIGNALS -->
   <button class="mob-tab" onclick="showView('signals',this)" id="mob-signals">
-    <svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
     SIGNALS
   </button>
-  <!-- SEARCH -->
-  <button class="mob-tab" onclick="showView('watchlist',this)" id="mob-watchlist">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
-    WATCH
-  </button>
-  <!-- PROFILE / AI COACH -->
+  <!-- AI COACH -->
   <button class="mob-tab" onclick="showView('coach',this)" id="mob-coach">
+    <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3.5-2.5 6.4-5.8 7.2L12 22l-1.2-5.8C7.5 15.4 5 12.5 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none"/></svg>
+    AI COACH
+  </button>
+  <!-- PROFILE (opens bottom sheet with all sections) -->
+  <button class="mob-tab" onclick="openProfileSheet(this)" id="mob-profile">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-    AI
+    PROFILE
   </button>
 </nav>
+
+<!-- PROFILE BOTTOM SHEET -->
+<div id="profile-sheet" style="
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+" onclick="closeProfileSheet(event)">
+  <div id="profile-sheet-inner" onclick="event.stopPropagation()" style="
+    position:absolute;bottom:0;left:0;right:0;
+    background:#14161e;
+    border-radius:28px 28px 0 0;
+    border-top:1px solid rgba(255,255,255,.10);
+    padding:12px 0 calc(env(safe-area-inset-bottom)+20px);
+    box-shadow:0 -8px 40px rgba(0,0,0,.6);
+    transform:translateY(100%);
+    transition:transform .32s cubic-bezier(.32,0,.67,1);
+  ">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.18);border-radius:2px;margin:0 auto 20px"></div>
+    <div style="padding:0 20px 10px;font-size:11px;font-weight:800;letter-spacing:.08em;color:rgba(255,255,255,.35)">NAVIGATE</div>
+    <div id="profile-sheet-links"></div>
+  </div>
+</div>
 
 <!-- MODAL OVERLAY -->
 <div id="modal-overlay" onclick="closeModal(event)">
@@ -2738,6 +2759,45 @@ function updateTimestamp() {
 }
 
 /* ── CARD RIPPLE ── */
+
+function openProfileSheet(tabEl) {
+  document.querySelectorAll('.mob-tab').forEach(n=>n.classList.remove('active'));
+  if(tabEl) tabEl.classList.add('active');
+  const sheet = document.getElementById('profile-sheet');
+  const inner = document.getElementById('profile-sheet-inner');
+  // Build links
+  const links = [
+    {name:'budget',    icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>', label:'Budget'},
+    {name:'analytics', icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', label:'Analytics'},
+    {name:'watchlist', icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>', label:'Watchlist'},
+    {name:'dividends', icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>', label:'Dividends'},
+    {name:'rebalance', icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4l16 16M20 4L4 20"/></svg>', label:'Rebalance'},
+    {name:'heatmap',   icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>', label:'Heatmap'},
+    {name:'settings',  icon:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>', label:'Settings'},
+  ];
+  document.getElementById('profile-sheet-links').innerHTML = links.map(l=>`
+    <div onclick="closeProfileSheet();showView('${l.name}',null)" style="
+      display:flex;align-items:center;gap:14px;padding:14px 24px;cursor:pointer;
+      transition:background .15s;border-radius:0;color:var(--t1);
+    " onmouseenter="this.style.background='rgba(255,255,255,.05)'" onmouseleave="this.style.background='none'">
+      <span style="color:var(--acc);opacity:.85">${l.icon}</span>
+      <span style="font-size:15px;font-weight:600">${l.label}</span>
+      <svg style="margin-left:auto;opacity:.3" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`).join('');
+  sheet.style.display = 'block';
+  requestAnimationFrame(()=>{ inner.style.transform='translateY(0)'; });
+}
+function closeProfileSheet(e) {
+  const inner = document.getElementById('profile-sheet-inner');
+  const sheet = document.getElementById('profile-sheet');
+  inner.style.transform='translateY(100%)';
+  setTimeout(()=>{ sheet.style.display='none'; }, 320);
+  // If closed without picking a view, keep HOME active
+  const anyActive = [...document.querySelectorAll('.mob-tab')].some(t=>t.classList.contains('active') && t.id!=='mob-profile');
+  if(!anyActive) {
+    document.getElementById('mob-overview') && document.getElementById('mob-overview').classList.add('active');
+  }
+}
 function cardRipple(e) {
   const card = e.currentTarget;
   const rect = card.getBoundingClientRect();
@@ -3938,19 +3998,31 @@ function renderBudgetView() {
     <!-- ══ ROW 6: GROWTH PLAYS ══ -->
     <div style="background:var(--bg2);border:1px solid var(--glass-border);border-radius:20px;overflow:hidden">
       <div style="padding:13px 14px 10px;border-bottom:1px solid var(--glass-border)"><span class="panel-title">🚀 Growth Plays</span></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0;padding:0">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:14px">
         ${[
-          { emoji:'⏰', title:'Overtime',         range:'$200–600/mo', col:'#fbbf24', desc:'2–3 extra shifts/mo compounds fast.' },
-          { emoji:'🧠', title:'HR Consulting',    range:'$300–800/mo', col:'#a78bfa', desc:'ADP/compliance expertise is valuable to SMBs.' },
-          { emoji:'📈', title:'Dividend ETFs',    range:'$50–200/mo',  col:'#00e5b0', desc:'SCHD/VYM — time is the edge here.' },
-          { emoji:'🏠', title:'Room Rental',      range:'$600–1,200/mo',col:'#60a5fa', desc:'Highest single income jump available.' },
-          { emoji:'🎁', title:'Benefits Audit',   range:'$100–500/mo', col:'#f87171', desc:'Maximize 401k match, FSA, HSA.' },
-        ].map((p,i)=>`<div style="padding:14px 13px;border-right:1px solid var(--glass-border);border-bottom:1px solid var(--glass-border)">
-          <div style="font-size:20px;margin-bottom:7px">${p.emoji}</div>
-          <div style="font-size:12px;font-weight:800;color:var(--t1);margin-bottom:3px">${p.title}</div>
-          <div style="font-family:var(--font-mono);font-size:11px;font-weight:900;color:${p.col};margin-bottom:5px">${p.range}</div>
-          <div style="font-size:10px;color:var(--t3);line-height:1.4">${p.desc}</div>
-        </div>`).join('')}
+          { icon:'⏱', title:'Overtime',      range:'$200–600/mo',   col:'#fbbf24', grad:'135deg,#f59e0b22,#92400e18', desc:'2–3 extra shifts/mo compounds fast.' },
+          { icon:'💡', title:'HR Consulting', range:'$300–800/mo',   col:'#a78bfa', grad:'135deg,#7c3aed22,#4c1d9518', desc:'ADP/compliance expertise is valuable to SMBs.' },
+          { icon:'📊', title:'Dividend ETFs', range:'$50–200/mo',    col:'#00e5b0', grad:'135deg,#00e5b022,#065f4618', desc:'SCHD/VYM — time is the edge here.' },
+          { icon:'🏡', title:'Room Rental',   range:'$600–1,200/mo', col:'#60a5fa', grad:'135deg,#2563eb22,#1e3a5f18', desc:'Highest single income jump available.' },
+          { icon:'🎯', title:'Benefits Audit',range:'$100–500/mo',   col:'#f87171', grad:'135deg,#dc262622,#7f1d1d18', desc:'Maximize 401k match, FSA, HSA.' },
+        ].map((p,i)=>`
+          <div class="growth-card" onclick="cardRipple(event)" style="
+            position:relative;overflow:hidden;border-radius:16px;padding:16px 14px 14px;cursor:pointer;
+            background:linear-gradient(var(--bg2),var(--bg2)) padding-box,
+              linear-gradient(${p.grad}) border-box;
+            border:1.5px solid transparent;
+            box-shadow:0 2px 12px rgba(0,0,0,.35);
+            transition:transform .18s,box-shadow .18s;
+          " onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.45)'"
+             onmouseleave="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,.35)'">
+            <div style="
+              width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+              background:linear-gradient(${p.grad});font-size:20px;margin-bottom:12px;
+            ">${p.icon}</div>
+            <div style="font-size:12px;font-weight:800;color:var(--t1);margin-bottom:4px;letter-spacing:-.01em">${p.title}</div>
+            <div style="font-family:var(--font-mono);font-size:12px;font-weight:900;color:${p.col};margin-bottom:7px">${p.range}</div>
+            <div style="font-size:10px;color:var(--t3);line-height:1.5">${p.desc}</div>
+          </div>`).join('')}
       </div>
     </div>
 
