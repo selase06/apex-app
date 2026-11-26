@@ -4293,14 +4293,19 @@ function importCSV() {
 let currentBrokerFmt = 'apex';
 const BROKER_HINTS = {
   apex:     'ticker,shares,avgCost,name,sector,account\nAAPL,10,150.00,Apple Inc,Tech,Individual',
-  fidelity: 'Symbol,Quantity,Last Price,Average Cost Basis\nAAPL,10,$150.00,$145.00',
+  fidelity: 'Account number,Account name,Symbol,Description,Quantity,Last price,...,Cost basis total,Average cost basis,Type\nZ31705308,Individual,CVX,CHEVRON CORP,0.829,$208.73,...,$137.13,$165.42,Margin',
   schwab:   'Symbol,Quantity,Price,Average Cost\nAAPL,10,"$150.00","$145.00"',
   td:       'Symbol,Qty,Trade Price,Mark\nAAPL,10,150.00,151.00',
   vanguard: 'Trade date,Settlement date,Transaction type,Investment name,Symbol,Shares,Share price,Principal amount\n...,Buy,Apple Inc,AAPL,10,$150.00,$1500.00',
 };
 const BROKER_COL_MAPS = {
   apex:     { ticker:0, shares:1, avgCost:2, name:3, sector:4, acct:5 },
-  fidelity: { ticker:0, shares:1, avgCost:3, name:-1, sector:-1, acct:-1 },
+  // Fidelity real export: Account number(0),Account name(1),Symbol(2),Description(3),
+  // Quantity(4),Last price(5),Last price change(6),Current value(7),
+  // Today's gain/loss dollar(8),Today's gain/loss percent(9),Total gain/loss dollar(10),
+  // Total gain/loss percent(11),Percent of account(12),Cost basis total(13),
+  // Average cost basis(14),Type(15)
+  fidelity: { ticker:2, shares:4, avgCost:14, name:3, sector:-1, acct:1 },
   schwab:   { ticker:0, shares:1, avgCost:3, name:-1, sector:-1, acct:-1 },
   td:       { ticker:0, shares:1, avgCost:2, name:-1, sector:-1, acct:-1 },
   vanguard: { ticker:4, shares:5, avgCost:6, name:3, sector:-1, acct:-1 },
@@ -4343,12 +4348,24 @@ function importCSVEnhanced() {
   const replace = ($('m-csv-replace')||{checked:false}).checked;
 
   const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
-  // Skip header rows (non-numeric first meaningful col)
+  // Skip header/footer rows:
+  // - starts with known header keywords
+  // - starts with disclaimer text (The data, Brokerage, Date downloaded)
+  // - the ticker-candidate col is empty or longer than 10 chars (not a valid ticker)
+  // - Money market / cash rows (SPAXX**, etc.)
   const dataLines = lines.filter(line => {
+    // Skip obvious non-data lines
+    if (/^"?The data|^"?Brokerage services|^"?Date downloaded/i.test(line)) return false;
     const parts = line.split(',');
     const tickerCol = cols.ticker >= 0 ? parts[cols.ticker] : parts[0];
     const tk = (tickerCol||'').replace(/"/g,'').trim();
-    return tk && tk.length <= 10 && !/^(symbol|ticker|investment|trade|description)/i.test(tk);
+    // Skip header rows and cash/money-market rows
+    if (!tk || tk.length > 10) return false;
+    if (/^(symbol|ticker|investment|trade|description|account)/i.test(tk)) return false;
+    if (/SPAXX|MONEY.?MARKET|HELD.?IN/i.test(tk)) return false;
+    // For Fidelity: also skip rows where the ticker col looks like an account number
+    if (/^[A-Z]\d{7,}/.test(tk)) return false;
+    return true;
   });
 
   let added = 0;
@@ -4364,8 +4381,12 @@ function importCSVEnhanced() {
     const tk = (ticker||'').toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
     const shares = parseFloat((sharesRaw||'').replace(/[,\s]/g,''));
     const avgCost = cleanPrice(costRaw);
-    if(!tk || isNaN(shares) || shares <= 0 || isNaN(avgCost) || avgCost <= 0) return;
-    newPositions.push({ id: Date.now()+idx, ticker:tk, name, shares, avgCost, sector, acct });
+    // avgCost may be 0 or NaN for some rows — fall back gracefully, only skip if ticker/shares bad
+    if(!tk || tk.length > 10 || isNaN(shares) || shares <= 0) return;
+    // Also skip cash/money-market tickers that slipped through
+    if (/SPAXX|HELD.?IN|MONEY/i.test(tk)) return;
+    const resolvedCost = (!isNaN(avgCost) && avgCost > 0) ? avgCost : 0;
+    newPositions.push({ id: Date.now()+idx, ticker:tk, name, shares, avgCost:resolvedCost, sector, acct });
     added++;
   });
 
@@ -6256,6 +6277,9 @@ if ('serviceWorker' in navigator) {
       "});"
     ].join('\n');
 
+    // Only register SW on https:// or localhost — blob: protocol not supported in Electron/app contexts
+    var proto = window.location.protocol;
+    if (proto !== 'https:' && proto !== 'http:') { return; }
     try {
       var blob = new Blob([SW_SRC], { type: 'application/javascript' });
       var swUrl = URL.createObjectURL(blob);
@@ -6264,7 +6288,7 @@ if ('serviceWorker' in navigator) {
           console.log('[APEX] SW registered, scope:', reg.scope);
         })
         .catch(function(err) {
-          console.log('[APEX] SW registration failed:', err);
+          console.log('[APEX] SW skipped:', err.message);
         });
     } catch(e) {
       console.log('[APEX] SW blob error:', e);
