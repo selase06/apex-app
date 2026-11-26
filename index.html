@@ -7149,6 +7149,14 @@ function txReset(){
   renderTaxView();
 }
 
+/* ── Expose globals needed by inline onclick handlers ── */
+window.renderTaxView  = renderTaxView;
+window.txGo           = txGo;
+window.txReset        = txReset;
+window.txPrintResult  = txPrintResult;
+window.txParseDoc     = txParseDoc;
+window.txSave         = txSave;
+
 /* ── Hook renderTaxView into showView ── */
 const _origShowView = window.showView;
 window.showView = function(name, el){
