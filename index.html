@@ -1392,7 +1392,7 @@ html { -webkit-text-size-adjust: 100%; }
           <div class="coach-msgs" id="coach-msgs">
             <div class="coach-msg ai">
               <div class="msg-bubble">
-                👋 I'm your APEX AI Coach, powered by your local Ollama. I know your exact portfolio — ask me anything about your positions, risk, signals, or what to do next.
+                👋 I'm your APEX AI Coach. I know your exact portfolio — ask me anything about your positions, risk, signals, or what to do next. Set your AI provider in Settings to get started.
               </div>
               <div class="msg-time">now</div>
             </div>
@@ -1431,19 +1431,61 @@ html { -webkit-text-size-adjust: 100%; }
               </div>
               <input class="apex-input" id="set-proxy" placeholder="e.g. http://localhost:8503" style="margin:0;width:220px">
             </div>
+          </div>
+
+          <!-- AI COACH -->
+          <div class="settings-section">
+            <div class="settings-title">AI Coach</div>
             <div class="setting-row">
               <div>
-                <div class="setting-label">Ollama AI Endpoint</div>
-                <div class="setting-desc">Your local Ollama server for AI Coach. Leave blank to disable AI features.</div>
+                <div class="setting-label">AI Provider</div>
+                <div class="setting-desc">Choose your AI backend. No homelab? Use OpenAI, Groq (free), or Anthropic.</div>
               </div>
-              <input class="apex-input" id="set-ollama" placeholder="e.g. http://localhost:11434" style="margin:0;width:220px">
+              <select class="apex-input" id="set-ai-provider" style="margin:0;width:160px" onchange="onAIProviderChange()">
+                <option value="ollama">Ollama (Local)</option>
+                <option value="openai">OpenAI (GPT-4o)</option>
+                <option value="groq">Groq (Free)</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+              </select>
             </div>
-            <div class="setting-row">
-              <div>
-                <div class="setting-label">AI Model</div>
-                <div class="setting-desc">Ollama model name (e.g. llama3.1:8b, mistral, gemma3)</div>
+            <!-- Ollama fields -->
+            <div id="ai-ollama-fields">
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">Ollama Endpoint</div>
+                  <div class="setting-desc">Your local Ollama server address.</div>
+                </div>
+                <input class="apex-input" id="set-ollama" placeholder="e.g. http://localhost:11434" style="margin:0;width:220px">
               </div>
-              <input class="apex-input" id="set-model" value="llama3.1:8b" style="margin:0;width:180px">
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">Ollama Model</div>
+                  <div class="setting-desc">e.g. llama3.1:8b, mistral, gemma3</div>
+                </div>
+                <input class="apex-input" id="set-model" value="llama3.1:8b" style="margin:0;width:180px">
+              </div>
+            </div>
+            <!-- Cloud API fields -->
+            <div id="ai-cloud-fields" style="display:none">
+              <div class="setting-row">
+                <div>
+                  <div class="setting-label">API Key</div>
+                  <div class="setting-desc" id="ai-key-desc">Paste your API key. Stored locally, never sent anywhere except the provider.</div>
+                </div>
+                <input class="apex-input" id="set-ai-key" type="password" placeholder="sk-…" style="margin:0;width:220px">
+              </div>
+              <div class="setting-row" id="ai-model-row">
+                <div>
+                  <div class="setting-label">Model</div>
+                  <div class="setting-desc" id="ai-model-desc">Model name</div>
+                </div>
+                <input class="apex-input" id="set-cloud-model" style="margin:0;width:200px">
+              </div>
+            </div>
+            <div class="setting-row" style="margin-top:4px">
+              <div style="font-size:11px;color:var(--t3);line-height:1.5">
+                <span id="ai-provider-hint">Get a free Groq key at <a href="https://console.groq.com" target="_blank" style="color:var(--acc)">console.groq.com</a> — no credit card required.</span>
+              </div>
             </div>
           </div>
 
@@ -2960,10 +3002,126 @@ function sendCoach() {
   sendCoachMsg(msg);
 }
 
+/* ── AI PROVIDER CONFIG ── */
+const AI_PROVIDERS = {
+  ollama:    { label:'Ollama (Local)',       defaultModel:'llama3.1:8b',     hint:'Run Ollama locally at localhost:11434. Free, private.' },
+  openai:    { label:'OpenAI (GPT-4o)',      defaultModel:'gpt-4o-mini',     hint:'Get an API key at <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--acc)">platform.openai.com</a>. Pay-per-use.' },
+  groq:      { label:'Groq (Free)',          defaultModel:'llama-3.1-8b-instant', hint:'Get a free key at <a href="https://console.groq.com" target="_blank" style="color:var(--acc)">console.groq.com</a> — no credit card required.' },
+  anthropic: { label:'Anthropic (Claude)',   defaultModel:'claude-haiku-4-5', hint:'Get an API key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--acc)">console.anthropic.com</a>. Pay-per-use.' }
+};
+
+function onAIProviderChange() {
+  const p = ($('set-ai-provider')||{value:'ollama'}).value;
+  const isOllama = p === 'ollama';
+  const ollamaFields = $('ai-ollama-fields');
+  const cloudFields  = $('ai-cloud-fields');
+  if(ollamaFields) ollamaFields.style.display = isOllama ? '' : 'none';
+  if(cloudFields)  cloudFields.style.display  = isOllama ? 'none' : '';
+  const cfg = AI_PROVIDERS[p] || AI_PROVIDERS.ollama;
+  const hintEl = $('ai-provider-hint');
+  if(hintEl) hintEl.innerHTML = cfg.hint;
+  const modelEl = $('set-cloud-model');
+  if(modelEl && !modelEl.value) modelEl.value = cfg.defaultModel;
+  const keyDescEl = $('ai-key-desc');
+  if(keyDescEl) keyDescEl.textContent = `${cfg.label} API key. Stored locally in your browser only.`;
+  // persist choice
+  const sv = S.get('settings') || {};
+  sv.aiProvider = p;
+  S.set('settings', sv);
+}
+
+function loadAISettings() {
+  const sv = S.get('settings') || {};
+  if(sv.aiProvider) {
+    const sel = $('set-ai-provider');
+    if(sel) { sel.value = sv.aiProvider; onAIProviderChange(); }
+  }
+  if(sv.aiKey)        { const k=$('set-ai-key');      if(k) k.value=sv.aiKey; }
+  if(sv.aiCloudModel) { const m=$('set-cloud-model'); if(m) m.value=sv.aiCloudModel; }
+
+  // Save key + model on blur
+  const keyEl = $('set-ai-key');
+  if(keyEl) keyEl.addEventListener('blur', () => {
+    const s = S.get('settings') || {};
+    s.aiKey = keyEl.value;
+    S.set('settings', s);
+  });
+  const mdlEl = $('set-cloud-model');
+  if(mdlEl) mdlEl.addEventListener('blur', () => {
+    const s = S.get('settings') || {};
+    s.aiCloudModel = mdlEl.value;
+    S.set('settings', s);
+  });
+}
+
+async function callAI(systemPrompt, userMsg) {
+  const provider = ($('set-ai-provider')||{value:'ollama'}).value;
+
+  if(provider === 'ollama') {
+    const url   = ($('set-ollama')||{value:''}).value;
+    const model = ($('set-model')||{value:'llama3.1:8b'}).value;
+    if(!url) throw new Error('no-config');
+    const r = await fetch(`${url}/api/generate`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model, prompt:`${systemPrompt}\n\nUser: ${userMsg}`, stream:false }),
+      signal: AbortSignal.timeout(20000)
+    });
+    if(!r.ok) throw new Error('provider-error');
+    const d = await r.json();
+    return d.response || '';
+  }
+
+  if(provider === 'openai') {
+    const key   = ($('set-ai-key')||{value:''}).value;
+    const model = ($('set-cloud-model')||{value:'gpt-4o-mini'}).value || 'gpt-4o-mini';
+    if(!key) throw new Error('no-key');
+    const r = await fetch('https://api.openai.com/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+      body: JSON.stringify({ model, messages:[{role:'system',content:systemPrompt},{role:'user',content:userMsg}], max_tokens:300 }),
+      signal: AbortSignal.timeout(20000)
+    });
+    if(!r.ok) { const e=await r.json().catch(()=>{}); throw new Error(e?.error?.message||'provider-error'); }
+    const d = await r.json();
+    return d.choices?.[0]?.message?.content || '';
+  }
+
+  if(provider === 'groq') {
+    const key   = ($('set-ai-key')||{value:''}).value;
+    const model = ($('set-cloud-model')||{value:'llama-3.1-8b-instant'}).value || 'llama-3.1-8b-instant';
+    if(!key) throw new Error('no-key');
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+      body: JSON.stringify({ model, messages:[{role:'system',content:systemPrompt},{role:'user',content:userMsg}], max_tokens:300 }),
+      signal: AbortSignal.timeout(20000)
+    });
+    if(!r.ok) { const e=await r.json().catch(()=>{}); throw new Error(e?.error?.message||'provider-error'); }
+    const d = await r.json();
+    return d.choices?.[0]?.message?.content || '';
+  }
+
+  if(provider === 'anthropic') {
+    const key   = ($('set-ai-key')||{value:''}).value;
+    const model = ($('set-cloud-model')||{value:'claude-haiku-4-5'}).value || 'claude-haiku-4-5';
+    if(!key) throw new Error('no-key');
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body: JSON.stringify({ model, system:systemPrompt, messages:[{role:'user',content:userMsg}], max_tokens:300 }),
+      signal: AbortSignal.timeout(20000)
+    });
+    if(!r.ok) { const e=await r.json().catch(()=>{}); throw new Error(e?.error?.message||'provider-error'); }
+    const d = await r.json();
+    return d.content?.[0]?.text || '';
+  }
+
+  throw new Error('unknown-provider');
+}
+
 async function sendCoachMsg(msg) {
   const msgs = $('coach-msgs');
 
-  // Add user bubble
   msgs.innerHTML += `
     <div class="coach-msg user">
       <div class="msg-bubble">${escHTML(msg)}</div>
@@ -2971,43 +3129,32 @@ async function sendCoachMsg(msg) {
     </div>
   `;
 
-  // Add thinking bubble
   const thinkId = 'think-' + Date.now();
   msgs.innerHTML += `
     <div class="coach-msg ai" id="${thinkId}">
       <div class="msg-bubble" style="color:var(--t3)">
-        <span id="think-dots">Thinking</span><span class="think-anim">…</span>
+        <span>Thinking</span><span class="think-anim">…</span>
       </div>
     </div>
   `;
   msgs.scrollTop = msgs.scrollHeight;
 
-  // Build portfolio context
   const { rows, total } = computedPositions();
-  const context = `Portfolio: ${rows.map(r=>`${r.ticker} ${r.shares}sh @$${r.avgCost} (${fmtPct(r.gainPct)})`).join(', ')}. Total: $${fmtNum(total)}.`;
-
-  const ollamaUrl = ($('set-ollama')||{value:''}).value;
-  const model = ($('set-model')||{value:'llama3.1:8b'}).value;
+  const context = `Portfolio (${rows.length} positions, total $${fmtNum(total)}): ${rows.map(r=>`${r.ticker} ${r.shares}sh @$${r.avgCost} cost, now ${fmtPct(r.gainPct)} gain, weight ${r.weight.toFixed(1)}%`).join('; ')}.`;
+  const systemPrompt = `You are APEX AI, an expert, direct portfolio analyst. ${context} Answer concisely (2-4 sentences). Be specific and data-driven. No disclaimers.`;
 
   let reply = '';
   try {
-    const r = await fetch(`${ollamaUrl}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        prompt: `You are APEX AI, an expert portfolio analyst. User portfolio: ${context}\n\nUser asks: ${msg}\n\nProvide a concise, specific, actionable response (2-4 sentences max). Be direct and data-driven.`,
-        stream: false
-      }),
-      signal: AbortSignal.timeout(15000)
-    });
-    if(r.ok) {
-      const d = await r.json();
-      reply = d.response || 'AI unavailable.';
-    } else { throw new Error(); }
+    reply = await callAI(systemPrompt, msg);
+    if(!reply) throw new Error('empty');
   } catch(e) {
-    // Offline fallback — intelligent rule-based
-    reply = generateOfflineResponse(msg, rows, total);
+    if(e.message === 'no-config') {
+      reply = 'No AI provider configured. Go to Settings → AI Coach and choose a provider (Groq is free and requires no homelab).';
+    } else if(e.message === 'no-key') {
+      reply = 'API key missing. Go to Settings → AI Coach and paste your API key for the selected provider.';
+    } else {
+      reply = generateOfflineResponse(msg, rows, total);
+    }
   }
 
   const thinkEl = $(thinkId);
@@ -3755,6 +3902,9 @@ function dismissPwaBanner() {
   // Restore currency selector
   const curSel = document.getElementById('set-currency');
   if(curSel) curSel.value = activeCurrency;
+
+  // Load AI provider settings
+  loadAISettings();
 
   // Profile grid + sidebar bar
   renderProfileGrid();
