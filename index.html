@@ -1331,6 +1331,10 @@ html { -webkit-text-size-adjust: 100%; }
         <span class="nav-badge">AI</span>
       </div>
       <div class="sb-section-label">Account</div>
+      <div class="nav-item" onclick="showView('tax',this)">
+        <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/><circle cx="17" cy="17" r="4" fill="var(--acc)" stroke="none"/><path d="M17 15.5v3M15.5 17h3" stroke="#000" stroke-width="1.5"/></svg></span>
+        <span>Tax Est.</span>
+      </div>
       <div class="nav-item" onclick="showView('settings',this)">
         <span class="nav-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
         <span>Settings</span>
@@ -1696,6 +1700,13 @@ html { -webkit-text-size-adjust: 100%; }
       </div>
 
       <!-- ── SETTINGS ── -->
+      <!-- ══════════════════════════════════════════
+           TAX RETURN ESTIMATOR PANEL
+           ══════════════════════════════════════════ -->
+      <div class="view" id="v-tax">
+        <div id="tax-root" style="max-width:680px;margin:0 auto;padding:20px 16px 80px"></div>
+      </div>
+
       <div class="view" id="v-settings">
         <div class="settings-view">
         <div class="content-wrap">
@@ -1905,6 +1916,11 @@ html { -webkit-text-size-adjust: 100%; }
   <button class="mob-tab" onclick="showView('coach',this)" id="mob-coach">
     <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 017 7c0 3.5-2.5 6.4-5.8 7.2L12 22l-1.2-5.8C7.5 15.4 5 12.5 5 9a7 7 0 017-7z"/><circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none"/></svg>
     AI COACH
+  </button>
+  <!-- TAX ESTIMATOR -->
+  <button class="mob-tab" onclick="showView('tax',this)" id="mob-tax">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>
+    TAX EST.
   </button>
   <!-- PROFILE (opens bottom sheet with all sections) -->
   <button class="mob-tab" onclick="showView('settings',this)" id="mob-profile" style="position:relative">
@@ -6375,6 +6391,772 @@ if ('serviceWorker' in navigator) {
     }
   });
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   APEX TAX RETURN ESTIMATOR  —  2025 Tax Year
+   Federal: OBBBA (signed July 4 2025)
+   Maryland: HB 352 (signed May 2025, retroactive Jan 1 2025)
+   ══════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+/* ── Storage key ── */
+const TX_KEY = 'apex_tax_2025';
+
+/* ── 2025 Federal Standard Deductions (OBBBA) ── */
+const FED_STD = { single:15750, mfs:15750, hoh:23625, mfj:31500, qss:31500 };
+
+/* ── 2025 Federal Brackets ── */
+const FED_BRACKETS = [
+  [0,       11925,  0.10],
+  [11925,   48475,  0.12],
+  [48475,   103350, 0.22],
+  [103350,  197300, 0.24],
+  [197300,  250525, 0.32],
+  [250525,  626350, 0.35],
+  [626350,  Infinity,0.37]
+];
+const FED_BRACKETS_MFJ = [
+  [0,       23850,  0.10],
+  [23850,   96950,  0.12],
+  [96950,   206700, 0.22],
+  [206700,  394600, 0.24],
+  [394600,  501050, 0.32],
+  [501050,  751600, 0.35],
+  [751600,  Infinity,0.37]
+];
+const FED_BRACKETS_HOH = [
+  [0,       17000,  0.10],
+  [17000,   64850,  0.12],
+  [64850,   103350, 0.22],
+  [103350,  197300, 0.24],
+  [197300,  250500, 0.32],
+  [250500,  626350, 0.35],
+  [626350,  Infinity,0.37]
+];
+
+/* ── Maryland 2025 Brackets (HB 352) ── */
+const MD_BRACKETS_S = [
+  [0,      1000,    0.02],
+  [1000,   2000,    0.03],
+  [2000,   3000,    0.04],
+  [3000,   100000,  0.0475],
+  [100000, 125000,  0.05],
+  [125000, 150000,  0.0525],
+  [150000, 250000,  0.055],
+  [250000, 500000,  0.0575],
+  [500000, 1000000, 0.0625],
+  [1000000,Infinity,0.065]
+];
+const MD_BRACKETS_MFJ = [
+  [0,      1000,    0.02],
+  [1000,   2000,    0.03],
+  [2000,   3000,    0.04],
+  [3000,   150000,  0.0475],
+  [150000, 175000,  0.05],
+  [175000, 225000,  0.0525],
+  [225000, 300000,  0.055],
+  [300000, 600000,  0.0575],
+  [600000, 1200000, 0.0625],
+  [1200000,Infinity,0.065]
+];
+/* Maryland standard deduction */
+const MD_STD = { single:3350, mfs:3350, hoh:6700, mfj:6700, qss:6700 };
+
+/* ── Maryland county local rates (2025) ── */
+const MD_COUNTIES = {
+  'Allegany':0.0305,'Anne Arundel':0.0281,'Baltimore City':0.032,'Baltimore County':0.0283,
+  'Calvert':0.03,'Caroline':0.033,'Carroll':0.0303,'Cecil':0.0280,'Charles':0.0303,
+  'Dorchester':0.0320,'Frederick':0.0296,'Garrett':0.0265,'Harford':0.0306,'Howard':0.032,
+  'Kent':0.0320,'Montgomery':0.032,'Prince George\'s':0.032,'Queen Anne\'s':0.032,
+  'St. Mary\'s':0.03,'Somerset':0.0320,'Talbot':0.0225,'Washington':0.0295,
+  'Wicomico':0.032,'Worcester':0.0125
+};
+
+/* ── CACFP 2025 meal rates (Tier I, 48 states) ── */
+const CACFP = { breakfast:1.49, lunch:2.86, supper:2.86, snack:0.97 };
+
+/* ── Helper: apply bracket table ── */
+function applyBrackets(brackets, income){
+  if(income<=0) return 0;
+  let tax=0;
+  for(let i=0;i<brackets.length;i++){
+    const [lo,hi,rate]=brackets[i];
+    if(income<=lo) break;
+    tax+=(Math.min(income,hi)-lo)*rate;
+  }
+  return tax;
+}
+
+/* ── Federal tax computation ── */
+function computeFederal(d){
+  const filing = d.filing;
+  const brackets = filing==='mfj'||filing==='qss' ? FED_BRACKETS_MFJ
+                 : filing==='hoh' ? FED_BRACKETS_HOH
+                 : FED_BRACKETS;
+  const stdDed = FED_STD[filing]||15750;
+
+  /* W-2 wages */
+  let wages = (d.w2_wages||0) + (d.w2_wages2||0);
+  /* 1099 / freelance */
+  let net1099 = (d.income_1099||0) - (d.expenses_1099||0);
+  /* Schedule C daycare */
+  let netSC = (d.sc_income||0) - (d.sc_deductions||0);
+  /* Home office (Form 8829 time-space) */
+  if(d.is_daycare && d.home_expenses && d.ts_pct){
+    const tsPct = parseFloat(d.ts_pct)||0;
+    netSC -= (d.home_expenses||0)*(tsPct/100);
+  }
+  /* Combined SE income */
+  const seTaxable = Math.max(0, net1099 + netSC);
+  const seHalf = seTaxable>0 ? seTaxable*0.9235*0.153*0.5 : 0;
+  /* QBI deduction (20% of SE income, up to threshold) */
+  const qbiThreshSingle = 197300, qbiThreshMfj = 394600;
+  const qbiThresh = (filing==='mfj'||filing==='qss') ? qbiThreshMfj : qbiThreshSingle;
+  /* Total gross income */
+  let grossIncome = wages + seTaxable + (d.other_income||0);
+  /* AGI deductions */
+  let agiDed = seHalf + (d.trad_ira||0) + (d.student_loan_int||0) + (d.se_health_ins||0);
+  let agi = Math.max(0, grossIncome - agiDed);
+  /* QBI deduction (below threshold = 20% of net SE) */
+  let qbi = 0;
+  if(seTaxable>0 && agi<=qbiThresh) qbi = seTaxable*0.20;
+  /* Itemized vs standard */
+  const itemized = (d.mortgage_int||0)+(d.state_taxes||0)+(d.charity||0)+(d.medical_excess||0);
+  const deduction = Math.max(stdDed, itemized);
+  /* Taxable income */
+  const taxableIncome = Math.max(0, agi - deduction - qbi);
+  /* Tax before credits */
+  let fedTax = applyBrackets(brackets, taxableIncome);
+  /* SE tax */
+  const seTax = seTaxable>0 ? seTaxable*0.9235*0.153 : 0;
+  /* Child Tax Credit (OBBBA $2,200/child) */
+  const ctcLimit = (filing==='mfj'||filing==='qss') ? 400000 : 200000;
+  const ctcRaw = (d.dependents||0)*2200;
+  const ctcPhaseout = agi>ctcLimit ? Math.floor((agi-ctcLimit)/1000)*50 : 0;
+  const ctc = Math.max(0, ctcRaw - ctcPhaseout);
+  /* Other dependent credit ($500 each) */
+  const odc = (d.other_deps||0)*500;
+  /* Child/Dependent care credit */
+  const careCredit = (d.care_expenses||0)>0 ? Math.min(d.care_expenses||0, filing==='mfj'?6000:3000)*0.20 : 0;
+  /* Solar (30% Residential Clean Energy Credit) */
+  const solarCredit = (d.solar_cost||0)*0.30;
+  /* Education credit (Lifetime Learning: 20% up to $10k) */
+  const eduCredit = Math.min((d.edu_expenses||0),10000)*0.20;
+  /* Total credits */
+  const totalCredits = ctc + odc + careCredit + solarCredit + eduCredit;
+  /* Net federal income tax */
+  let netFedTax = Math.max(0, fedTax - totalCredits);
+  /* Total federal liability */
+  let totalFedLiability = netFedTax + seTax;
+  /* Federal withholding */
+  const fedWithheld = (d.fed_withheld||0) + (d.fed_withheld2||0);
+  /* Federal refund/due */
+  const fedRefund = fedWithheld - totalFedLiability;
+
+  return {agi, taxableIncome, fedTax, seTax, totalCredits, netFedTax, totalFedLiability, fedWithheld, fedRefund,
+          ctc, odc, careCredit, solarCredit, eduCredit, qbi, deduction, stdDed, itemized, seTaxable, seHalf};
+}
+
+/* ── Maryland tax computation ── */
+function computeMaryland(d, fedResult){
+  const filing = d.filing;
+  const agi = fedResult.agi;
+  const mdBrackets = (filing==='mfj'||filing==='qss'||filing==='hoh') ? MD_BRACKETS_MFJ : MD_BRACKETS_S;
+  const mdStd = MD_STD[filing]||3350;
+  /* Maryland taxable income (uses federal AGI minus MD standard deduction) */
+  const mdTaxable = Math.max(0, agi - mdStd);
+  /* State income tax */
+  const mdStateTax = applyBrackets(mdBrackets, mdTaxable);
+  /* Local/county income tax */
+  const county = d.md_county || 'Washington';
+  const localRate = MD_COUNTIES[county] || 0.0295;
+  const mdLocalTax = mdTaxable * localRate;
+  /* MD personal exemption ($3,200 per person; $6,400 MFJ) */
+  const mdExemption = (filing==='mfj'||filing==='qss') ? 6400 : 3200;
+  /* MD EIC (approximated as 50% of federal EIC if applicable) */
+  /* Total MD liability */
+  const totalMd = Math.max(0, mdStateTax + mdLocalTax - mdExemption*0); // exemption already in bracket calc via deduction
+  /* MD withholding */
+  const mdWithheld = (d.md_withheld||0) + (d.md_withheld2||0);
+  /* MD refund/due */
+  const mdRefund = mdWithheld - totalMd;
+
+  return {mdTaxable, mdStateTax, mdLocalTax, totalMd, mdWithheld, mdRefund, county, localRate};
+}
+
+/* ══ WIZARD STATE ══ */
+let TX = {};
+function txLoad(){ try{ TX=JSON.parse(localStorage.getItem(TX_KEY)||'{}'); }catch(e){ TX={}; } }
+function txSave(){ try{ localStorage.setItem(TX_KEY,JSON.stringify(TX)); }catch(e){} }
+txLoad();
+
+let txStep = TX._step || 0;
+const TX_STEPS = ['filing','income','deductions','credits','business','maryland','result'];
+
+/* ══ RENDER ROUTER ══ */
+function renderTaxView(){
+  const root = document.getElementById('tax-root');
+  if(!root) return;
+  txLoad();
+  txStep = Math.min(TX._step||0, TX_STEPS.length-1);
+
+  const stepFns = [txStep0,txStep1,txStep2,txStep3,txStep4,txStep5,txStep6];
+  root.innerHTML = '';
+  root.appendChild(txHeader());
+  root.appendChild(stepFns[txStep]());
+}
+
+/* ── Progress header ── */
+function txHeader(){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:-.5px">Tax Return Estimator</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px">2025 Tax Year &middot; Federal + Maryland</div>
+      </div>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="txReset()">Reset</button>
+    </div>
+    <div style="background:var(--glass);border-radius:8px;padding:12px 16px;margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        ${TX_STEPS.map((s,i)=>`<div style="font-size:9px;text-align:center;color:${i<txStep?'var(--acc)':i===txStep?'var(--t1)':'var(--t3)'};font-weight:${i===txStep?700:400};flex:1">${['Filing','Income','Deductions','Credits','Business','Maryland','Results'][i]}</div>`).join('')}
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:4px;overflow:hidden">
+        <div style="height:100%;background:var(--acc);border-radius:4px;width:${((txStep)/(TX_STEPS.length-1))*100}%;transition:width .3s"></div>
+      </div>
+    </div>
+  `;
+  return wrap;
+}
+
+/* ── Shared form helpers ── */
+function txCard(title, body){
+  const d=document.createElement('div');
+  d.className='panel-card';
+  d.style.cssText='margin-bottom:14px;padding:16px';
+  d.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">${title}</div>${body}`;
+  return d;
+}
+function txField(label, name, type, value, attrs=''){
+  return `<div style="margin-bottom:10px">
+    <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">${label}</label>
+    <input type="${type}" name="${name}" value="${value||''}" ${attrs}
+      style="width:100%;background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--t1);font-size:13px;box-sizing:border-box"
+      onchange="TX['${name}']=this.type==='number'?parseFloat(this.value)||0:this.value;txSave()">
+  </div>`;
+}
+function txSelect(label, name, options, current){
+  return `<div style="margin-bottom:10px">
+    <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">${label}</label>
+    <select name="${name}" onchange="TX['${name}']=this.value;txSave();renderTaxView()"
+      style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--t1);font-size:13px;box-sizing:border-box">
+      ${options.map(([v,l])=>`<option value="${v}" ${current===v?'selected':''}>${l}</option>`).join('')}
+    </select>
+  </div>`;
+}
+function txNav(prev, next, nextLabel){
+  return `<div style="display:flex;gap:10px;margin-top:16px">
+    ${prev>=0?`<button class="btn btn-ghost" style="flex:1" onclick="txGo(${prev})">← Back</button>`:'<div style="flex:1"></div>'}
+    <button class="btn" style="flex:2;background:var(--acc);color:#000" onclick="txGo(${next})">${nextLabel||'Continue →'}</button>
+  </div>`;
+}
+function txGo(step){ TX._step=step; txSave(); txStep=step; renderTaxView(); window.scrollTo(0,0); }
+
+/* ── W-2 / doc photo upload ── */
+function txUploadBtn(label, fieldPrefix, hint){
+  return `<div style="margin-bottom:12px">
+    <div style="font-size:11px;color:var(--t3);margin-bottom:6px">${label} <span style="color:var(--t4)">(${hint})</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <label style="cursor:pointer">
+        <input type="file" accept="image/*,.pdf" style="display:none"
+          onchange="txParseDoc(this,'${fieldPrefix}')">
+        <span class="btn btn-ghost" style="font-size:12px;padding:6px 12px">📷 Upload / Scan</span>
+      </label>
+      <span id="tx-parse-${fieldPrefix}" style="font-size:11px;color:var(--t3);align-self:center"></span>
+    </div>
+  </div>`;
+}
+
+function txParseDoc(input, prefix){
+  const file = input.files[0];
+  if(!file) return;
+  const lbl = document.getElementById('tx-parse-'+prefix);
+  if(lbl) lbl.textContent = 'Sending to AI…';
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    const base64 = e.target.result.split(',')[1];
+    const mimeType = file.type || 'image/jpeg';
+    try{
+      const resp = await fetch('http://10.0.0.150:11434/api/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'llava',
+          messages:[{
+            role:'user',
+            content:'This is a tax document image. Extract the following numeric values ONLY as JSON: { "wages": <Box 1 or total wages>, "fed_withheld": <Box 2 federal income tax withheld>, "ss_withheld": <Box 4 social security tax withheld if any>, "state_withheld": <Box 17 state income tax withheld>, "income_1099": <1099-NEC Box 1 nonemployee comp if visible>, "net_income": <Schedule K1 or other net income if visible> }. Reply ONLY with valid JSON.',
+            images:[base64]
+          }],
+          stream:false
+        })
+      });
+      const data = await resp.json();
+      let txt = (data.message&&data.message.content)||'';
+      const jsonMatch = txt.match(/\{[\s\S]*?\}/);
+      if(jsonMatch){
+        const parsed = JSON.parse(jsonMatch[0]);
+        if(parsed.wages && prefix==='w2'){ TX.w2_wages=(TX.w2_wages||0)+parseFloat(parsed.wages||0); }
+        if(parsed.wages && prefix==='w2b'){ TX.w2_wages2=(TX.w2_wages2||0)+parseFloat(parsed.wages||0); }
+        if(parsed.fed_withheld && prefix==='w2'){ TX.fed_withheld=(TX.fed_withheld||0)+parseFloat(parsed.fed_withheld||0); }
+        if(parsed.fed_withheld && prefix==='w2b'){ TX.fed_withheld2=(TX.fed_withheld2||0)+parseFloat(parsed.fed_withheld||0); }
+        if(parsed.state_withheld && prefix==='w2'){ TX.md_withheld=(TX.md_withheld||0)+parseFloat(parsed.state_withheld||0); }
+        if(parsed.state_withheld && prefix==='w2b'){ TX.md_withheld2=(TX.md_withheld2||0)+parseFloat(parsed.state_withheld||0); }
+        if(parsed.income_1099){ TX.income_1099=(TX.income_1099||0)+parseFloat(parsed.income_1099||0); }
+        txSave();
+        if(lbl) lbl.textContent = 'AI extracted values — verify below.';
+        renderTaxView();
+      } else {
+        if(lbl) lbl.textContent = 'AI could not parse — enter manually.';
+      }
+    } catch(err){
+      if(lbl) lbl.textContent = 'AI unavailable — enter manually.';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ══ STEP 0: Filing Status ══ */
+function txStep0(){
+  const wrap=document.createElement('div');
+  const f=TX.filing||'single';
+  wrap.innerHTML=`
+    ${txCard('Filing Status & Household', `
+      ${txSelect('Filing Status','filing',[
+        ['single','Single'],['mfj','Married Filing Jointly'],['mfs','Married Filing Separately'],
+        ['hoh','Head of Household'],['qss','Qualifying Surviving Spouse']
+      ], f)}
+      ${txField('Number of qualifying children (under 17)','dependents','number',TX.dependents,'')}
+      ${txField('Other dependents (not under 17, e.g. parent)','other_deps','number',TX.other_deps,'')}
+      ${txField('Tax Year','tax_year','number',TX.tax_year||2025,'')}
+    `).outerHTML||''}
+    <div style="background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:var(--t3)">
+      📋 <strong style="color:var(--t2)">2025 Standard Deductions (OBBBA):</strong>
+      Single $15,750 &nbsp;|&nbsp; MFJ $31,500 &nbsp;|&nbsp; HOH $23,625
+    </div>
+    ${txNav(-1,1)}
+  `;
+  /* Rebuild with proper card structure */
+  const outer=document.createElement('div');
+  const c=document.createElement('div');
+  c.className='panel-card';
+  c.style.cssText='margin-bottom:14px;padding:16px';
+  c.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Filing Status &amp; Household</div>
+    ${txSelect('Filing Status','filing',[
+      ['single','Single'],['mfj','Married Filing Jointly'],['mfs','Married Filing Separately'],
+      ['hoh','Head of Household'],['qss','Qualifying Surviving Spouse']
+    ], TX.filing||'single')}
+    ${txField('Qualifying children under 17 (for Child Tax Credit)','dependents','number',TX.dependents,'')}
+    ${txField('Other dependents (parent, college student, etc.)','other_deps','number',TX.other_deps,'')}`;
+  const info=document.createElement('div');
+  info.style.cssText='background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:var(--t3)';
+  info.innerHTML='📋 <strong style="color:var(--t2)">2025 Standard Deductions (OBBBA signed July 4 2025):</strong><br>Single / MFS: $15,750 &nbsp;&middot;&nbsp; HOH: $23,625 &nbsp;&middot;&nbsp; MFJ / QSS: $31,500';
+  const nav=document.createElement('div');
+  nav.innerHTML=txNav(-1,1);
+  outer.appendChild(c);
+  outer.appendChild(info);
+  outer.appendChild(nav);
+  return outer;
+}
+
+/* ══ STEP 1: Income ══ */
+function txStep1(){
+  const outer=document.createElement('div');
+  const c1=document.createElement('div');
+  c1.className='panel-card'; c1.style.cssText='margin-bottom:14px;padding:16px';
+  c1.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Primary W-2 Income</div>
+    ${txUploadBtn('Upload W-2 (primary job)','w2','AI will extract wages & withholding')}
+    ${txField('W-2 Box 1 — Wages (primary job)','w2_wages','number',TX.w2_wages,'placeholder="0.00"')}
+    ${txField('Federal Income Tax Withheld (Box 2)','fed_withheld','number',TX.fed_withheld,'placeholder="0.00"')}`;
+
+  const c2=document.createElement('div');
+  c2.className='panel-card'; c2.style.cssText='margin-bottom:14px;padding:16px';
+  c2.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Second Job / Spouse W-2</div>
+    ${txUploadBtn('Upload W-2 (second job / spouse)','w2b','optional')}
+    ${txField('W-2 Wages — 2nd job or spouse','w2_wages2','number',TX.w2_wages2,'placeholder="0.00"')}
+    ${txField('Federal Withholding — 2nd W-2','fed_withheld2','number',TX.fed_withheld2,'placeholder="0.00"')}`;
+
+  const c3=document.createElement('div');
+  c3.className='panel-card'; c3.style.cssText='margin-bottom:14px;padding:16px';
+  c3.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">1099 / Freelance / Self-Employment</div>
+    ${txUploadBtn('Upload 1099-NEC or 1099-MISC','1099','optional')}
+    ${txField('1099 Gross income (all 1099s combined)','income_1099','number',TX.income_1099,'placeholder="0.00"')}
+    ${txField('Business expenses related to 1099 income','expenses_1099','number',TX.expenses_1099,'placeholder="0.00"')}`;
+
+  const c4=document.createElement('div');
+  c4.className='panel-card'; c4.style.cssText='margin-bottom:14px;padding:16px';
+  c4.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Other Income</div>
+    ${txField('Other taxable income (interest, dividends, rental, etc.)','other_income','number',TX.other_income,'placeholder="0.00"')}`;
+
+  const nav=document.createElement('div');
+  nav.innerHTML=txNav(0,2);
+  [c1,c2,c3,c4,nav].forEach(el=>outer.appendChild(el));
+  return outer;
+}
+
+/* ══ STEP 2: Deductions ══ */
+function txStep2(){
+  const outer=document.createElement('div');
+  const f=TX.filing||'single';
+  const stdDed=FED_STD[f]||15750;
+
+  const c1=document.createElement('div');
+  c1.className='panel-card'; c1.style.cssText='margin-bottom:14px;padding:16px';
+  c1.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Above-the-Line Deductions (reduce AGI)</div>
+    ${txField('Traditional IRA contributions','trad_ira','number',TX.trad_ira,'placeholder="0.00 (max $7,000; $8,000 if 50+)"')}
+    ${txField('Student loan interest paid','student_loan_int','number',TX.student_loan_int,'placeholder="0.00 (max $2,500)"')}
+    ${txField('Self-employed health insurance premiums','se_health_ins','number',TX.se_health_ins,'placeholder="0.00"')}`;
+
+  const c2=document.createElement('div');
+  c2.className='panel-card'; c2.style.cssText='margin-bottom:14px;padding:16px';
+  c2.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Itemized Deductions</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Your standard deduction is <strong style="color:var(--acc)">$${stdDed.toLocaleString()}</strong>. Only itemize if your total below exceeds this.</div>
+    ${txField('Mortgage interest paid','mortgage_int','number',TX.mortgage_int,'placeholder="0.00"')}
+    ${txField('State & local taxes (SALT) — capped at $10,000','state_taxes','number',TX.state_taxes,'placeholder="0.00 (cap $10,000)"')}
+    ${txField('Charitable contributions','charity','number',TX.charity,'placeholder="0.00"')}
+    ${txField('Medical expenses exceeding 7.5% of AGI','medical_excess','number',TX.medical_excess,'placeholder="0.00"')}`;
+
+  const nav=document.createElement('div');
+  nav.innerHTML=txNav(1,3);
+  [c1,c2,nav].forEach(el=>outer.appendChild(el));
+  return outer;
+}
+
+/* ══ STEP 3: Credits ══ */
+function txStep3(){
+  const outer=document.createElement('div');
+  const c1=document.createElement('div');
+  c1.className='panel-card'; c1.style.cssText='margin-bottom:14px;padding:16px';
+  c1.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Tax Credits</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Credits reduce your tax dollar-for-dollar (more valuable than deductions).</div>
+    ${txField('Child/Dependent care expenses (daycare, after-school)','care_expenses','number',TX.care_expenses,'placeholder="0.00"')}
+    ${txField('College/education expenses (Lifetime Learning)','edu_expenses','number',TX.edu_expenses,'placeholder="0.00 (20% credit up to $10k)"')}`;
+
+  const c2=document.createElement('div');
+  c2.className='panel-card'; c2.style.cssText='margin-bottom:14px;padding:16px';
+  c2.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Solar & Clean Energy</div>
+    ${txField('Solar panel / clean energy installation cost (2025)','solar_cost','number',TX.solar_cost,'placeholder="0.00 — 30% credit applied"')}
+    <div style="font-size:11px;color:var(--t3);margin-top:-4px;margin-bottom:8px">30% Residential Clean Energy Credit (no cap in 2025)</div>`;
+
+  const info=document.createElement('div');
+  info.style.cssText='background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:var(--t3)';
+  info.innerHTML='🧒 <strong style="color:var(--t2)">Child Tax Credit 2025 (OBBBA):</strong> $2,200 per qualifying child. Phases out at $200k AGI (single) or $400k (MFJ). Automatically calculated from your dependents entered in Step 1.';
+
+  const nav=document.createElement('div');
+  nav.innerHTML=txNav(2,4);
+  [c1,c2,info,nav].forEach(el=>outer.appendChild(el));
+  return outer;
+}
+
+/* ══ STEP 4: Business / Schedule C ══ */
+function txStep4(){
+  const outer=document.createElement('div');
+  const isDaycare=TX.is_daycare;
+
+  const c1=document.createElement('div');
+  c1.className='panel-card'; c1.style.cssText='margin-bottom:14px;padding:16px';
+  c1.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Business / Schedule C</div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:6px">Do you have a Schedule C business (sole proprietor)?</label>
+      <div style="display:flex;gap:10px">
+        <button class="btn ${!TX.has_schedC?'':'btn-ghost'}" style="flex:1;font-size:12px" onclick="TX.has_schedC=true;txSave();renderTaxView()">Yes</button>
+        <button class="btn ${!TX.has_schedC?'btn-ghost':''}" style="flex:1;font-size:12px" onclick="TX.has_schedC=false;TX.is_daycare=false;txSave();renderTaxView()">No</button>
+      </div>
+    </div>
+    ${TX.has_schedC?`
+      ${txField('Gross Schedule C revenue','sc_income','number',TX.sc_income,'placeholder="0.00"')}
+      ${txField('Total Schedule C deductions (supplies, mileage, insurance, etc.)','sc_deductions','number',TX.sc_deductions,'placeholder="0.00"')}
+      <div style="font-size:11px;color:var(--t3);margin-top:-4px;margin-bottom:10px">
+        Vehicle mileage: $0.70/mile for 2025. Multiply miles × 0.70.
+      </div>
+    `:''}`;
+
+  outer.appendChild(c1);
+
+  if(TX.has_schedC){
+    const c2=document.createElement('div');
+    c2.className='panel-card'; c2.style.cssText='margin-bottom:14px;padding:16px';
+    c2.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Family Home Daycare (Schedule C + Form 8829)</div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:6px">Is this a licensed family home daycare business?</label>
+        <div style="display:flex;gap:10px">
+          <button class="btn ${TX.is_daycare?'':'btn-ghost'}" style="flex:1;font-size:12px" onclick="TX.is_daycare=true;txSave();renderTaxView()">Yes</button>
+          <button class="btn ${!TX.is_daycare?'':'btn-ghost'}" style="flex:1;font-size:12px" onclick="TX.is_daycare=false;txSave();renderTaxView()">No</button>
+        </div>
+      </div>
+      ${TX.is_daycare?`
+        <div style="background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--t3)">
+          <strong style="color:var(--t2)">Time-Space % (Form 8829):</strong><br>
+          Formula: (Daycare hours ÷ 8,760) × (Business sq ft ÷ Total sq ft)<br>
+          Exclusively used rooms count at 100% space; mixed rooms use the time ratio.
+        </div>
+        ${txField('Total annual home expenses (rent/mortgage, utilities, insurance, property tax)','home_expenses','number',TX.home_expenses,'placeholder="0.00"')}
+        ${txField('Time-Space percentage (enter as number, e.g. 32 for 32%)','ts_pct','number',TX.ts_pct,'placeholder="e.g. 32"')}
+        ${txField('CACFP food reimbursements received (taxable income)','cacfp_income','number',TX.cacfp_income,'placeholder="0.00"')}
+        <div style="background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:0;font-size:11px;color:var(--t3)">
+          <strong style="color:var(--t2)">2025 CACFP Standard Meal Rates (Tier I):</strong><br>
+          Breakfast $1.49 &nbsp;|&nbsp; Lunch/Supper $2.86 &nbsp;|&nbsp; Snack $0.97<br>
+          Food deduction = children served × meals × rate (use IRS Pub 587)
+        </div>
+      `:''}`;
+    outer.appendChild(c2);
+  }
+
+  const nav=document.createElement('div');
+  nav.innerHTML=txNav(3,5);
+  outer.appendChild(nav);
+  return outer;
+}
+
+/* ══ STEP 5: Maryland ══ */
+function txStep5(){
+  const outer=document.createElement('div');
+  const counties=Object.keys(MD_COUNTIES).sort();
+
+  const c1=document.createElement('div');
+  c1.className='panel-card'; c1.style.cssText='margin-bottom:14px;padding:16px';
+  c1.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Maryland State Taxes</div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:6px">Are you a Maryland resident?</label>
+      <div style="display:flex;gap:10px">
+        <button class="btn ${TX.is_md!==false?'':'btn-ghost'}" style="flex:1;font-size:12px" onclick="TX.is_md=true;txSave();renderTaxView()">Yes</button>
+        <button class="btn ${TX.is_md===false?'':'btn-ghost'}" style="flex:1;font-size:12px" onclick="TX.is_md=false;txSave();renderTaxView()">No / Other State</button>
+      </div>
+    </div>
+    ${TX.is_md!==false?`
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">Maryland County</label>
+        <select onchange="TX.md_county=this.value;txSave()"
+          style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--t1);font-size:13px;box-sizing:border-box">
+          ${counties.map(c=>`<option value="${c}" ${(TX.md_county||'Washington')===c?'selected':''}>${c} (${(MD_COUNTIES[c]*100).toFixed(2)}% local)</option>`).join('')}
+        </select>
+      </div>
+      ${txField('Maryland state income tax withheld (W-2 Box 17 — primary)','md_withheld','number',TX.md_withheld,'placeholder="0.00"')}
+      ${txField('Maryland withheld — 2nd job or spouse W-2','md_withheld2','number',TX.md_withheld2,'placeholder="0.00"')}
+      <div style="font-size:11px;color:var(--t3);margin-top:4px">
+        HB 352 (retroactive Jan 1 2025): New brackets up to 6.5% for incomes over $1M (single) / $1.2M (MFJ).<br>
+        Standard deduction: $3,350 single / $6,700 MFJ. Local tax added on top of state tax.
+      </div>
+    `:'<div style="font-size:12px;color:var(--t3);padding:10px 0">Maryland calculation will be skipped. Federal estimate will still be shown.</div>'}`;
+
+  const nav=document.createElement('div');
+  nav.innerHTML=txNav(4,6,'Calculate My Return →');
+  [c1,nav].forEach(el=>outer.appendChild(el));
+  return outer;
+}
+
+/* ══ STEP 6: Results ══ */
+function txStep6(){
+  const outer=document.createElement('div');
+  const fed=computeFederal(TX);
+  const md=TX.is_md!==false ? computeMaryland(TX,fed) : null;
+  const combined=fed.fedRefund+(md?md.mdRefund:0);
+
+  const fmt=v=>'$'+Math.abs(v).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  const fmtSigned=v=>(v>=0?'+':'-')+' '+fmt(v);
+  const color=v=>v>=0?'#22c55e':'#ef4444';
+
+  /* Results header */
+  const hdr=document.createElement('div');
+  hdr.className='panel-card';
+  hdr.style.cssText='margin-bottom:14px;padding:20px;text-align:center;background:var(--glass)';
+  hdr.innerHTML=`
+    <div style="font-size:12px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Estimated Combined Refund / Due</div>
+    <div style="font-size:40px;font-weight:800;color:${color(combined)};margin:8px 0">${fmtSigned(combined)}</div>
+    <div style="font-size:11px;color:var(--t3)">${combined>=0?'You may receive a refund':'You may owe additional tax'} · Federal + Maryland</div>
+  `;
+
+  /* Federal breakdown */
+  const fedCard=document.createElement('div');
+  fedCard.className='panel-card';
+  fedCard.style.cssText='margin-bottom:14px;padding:16px';
+  fedCard.innerHTML=`
+    <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Federal Return Details</div>
+    ${txRow('Gross Income (wages + SE + other)', fed.agi+fed.deduction+fed.qbi)}
+    ${txRow('AGI', fed.agi)}
+    ${txRow('Deduction used', fed.deduction, fed.deduction>fed.stdDed?` (Itemized — saves over standard)`:'(Standard)')}
+    ${fed.qbi>0?txRow('QBI Deduction (20% of SE income)',fed.qbi):''}
+    ${txRow('Taxable Income', fed.taxableIncome)}
+    ${txRow('Federal Income Tax (before credits)', fed.fedTax)}
+    ${fed.seTax>0?txRow('Self-Employment Tax (15.3%)',fed.seTax):''}
+    ${fed.ctc>0?txRow('Child Tax Credit',fed.ctc,null,true):''}
+    ${fed.odc>0?txRow('Other Dependent Credit',fed.odc,null,true):''}
+    ${fed.careCredit>0?txRow('Child/Dependent Care Credit',fed.careCredit,null,true):''}
+    ${fed.solarCredit>0?txRow('Solar Energy Credit (30%)',fed.solarCredit,null,true):''}
+    ${fed.eduCredit>0?txRow('Education Credit (LLC)',fed.eduCredit,null,true):''}
+    <div style="border-top:1px solid var(--border);margin:10px 0"></div>
+    ${txRow('Total Federal Tax Liability', fed.totalFedLiability)}
+    ${txRow('Federal Tax Withheld', fed.fedWithheld)}
+    <div style="border-top:1px solid var(--border);margin:10px 0"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+      <span style="font-weight:600;font-size:13px">Federal ${fed.fedRefund>=0?'Refund':'Amount Due'}</span>
+      <span style="font-weight:700;font-size:16px;color:${color(fed.fedRefund)}">${fmtSigned(fed.fedRefund)}</span>
+    </div>
+  `;
+
+  /* Maryland breakdown */
+  let mdCard=null;
+  if(md){
+    mdCard=document.createElement('div');
+    mdCard.className='panel-card';
+    mdCard.style.cssText='margin-bottom:14px;padding:16px';
+    mdCard.innerHTML=`
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Maryland Return Details</div>
+      ${txRow('Maryland Taxable Income', md.mdTaxable)}
+      ${txRow('MD State Income Tax', md.mdStateTax)}
+      ${txRow(`${md.county} County Local Tax (${(md.localRate*100).toFixed(2)}%)`, md.mdLocalTax)}
+      <div style="border-top:1px solid var(--border);margin:10px 0"></div>
+      ${txRow('Total Maryland Tax Liability', md.totalMd)}
+      ${txRow('Maryland Tax Withheld', md.mdWithheld)}
+      <div style="border-top:1px solid var(--border);margin:10px 0"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+        <span style="font-weight:600;font-size:13px">Maryland ${md.mdRefund>=0?'Refund':'Amount Due'}</span>
+        <span style="font-weight:700;font-size:16px;color:${color(md.mdRefund)}">${fmtSigned(md.mdRefund)}</span>
+      </div>
+    `;
+  }
+
+  /* Tips */
+  const tips=buildTaxTips(fed,md,TX);
+
+  /* Buttons */
+  const btns=document.createElement('div');
+  btns.style.cssText='display:flex;gap:10px;margin-top:16px;flex-wrap:wrap';
+  btns.innerHTML=`
+    <button class="btn btn-ghost" style="flex:1;font-size:12px" onclick="txGo(0)">← Edit Info</button>
+    <button class="btn btn-ghost" style="flex:1;font-size:12px" onclick="txPrintResult()">🖨 Print</button>
+    <button class="btn" style="flex:2;background:var(--acc);color:#000;font-size:12px" onclick="txGo(0)">Start New Estimate</button>
+  `;
+
+  const disclaimer=document.createElement('div');
+  disclaimer.style.cssText='font-size:10px;color:var(--t4);text-align:center;margin-top:12px;line-height:1.5';
+  disclaimer.textContent='⚠️ This is an estimate for educational purposes only. Consult a licensed tax professional or CPA before filing. Tax laws change and individual circumstances vary.';
+
+  outer.appendChild(hdr);
+  outer.appendChild(fedCard);
+  if(mdCard) outer.appendChild(mdCard);
+  outer.appendChild(tips);
+  outer.appendChild(btns);
+  outer.appendChild(disclaimer);
+  return outer;
+}
+
+function txRow(label, value, note, isCredit){
+  const v=value||0;
+  return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+    <span style="color:var(--t3)">${label}${note?` <span style="font-size:10px;color:var(--acc)">${note}</span>`:''}</span>
+    <span style="color:${isCredit?'#22c55e':'var(--t1)'};">${isCredit?'−':''} $${v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')}</span>
+  </div>`;
+}
+
+function buildTaxTips(fed,md,d){
+  const tips=[];
+  const f=TX.filing||'single';
+  /* Withholding check */
+  if(Math.abs(fed.fedRefund)>3000 && fed.fedRefund>0)
+    tips.push({icon:'💡',text:'Large federal refund — consider adjusting your W-4 to get more in each paycheck throughout the year.'});
+  if(fed.fedRefund<-500)
+    tips.push({icon:'⚠️',text:'You may owe federal tax. Consider increasing W-4 withholding or making estimated quarterly payments.'});
+  /* IRA */
+  if((d.trad_ira||0)<7000 && fed.agi<(f==='mfj'?240000:146000))
+    tips.push({icon:'📈',text:`You can contribute up to $7,000 (or $8,000 if 50+) to a Traditional or Roth IRA for 2025. A deductible IRA contribution reduces your AGI.`});
+  /* QBI */
+  if(fed.seTaxable>0 && fed.qbi>0)
+    tips.push({icon:'🏢',text:`QBI deduction saved you ~$${(fed.qbi*0.22).toFixed(0)} in taxes by deducting 20% of your self-employment income.`});
+  /* Solar */
+  if(!(d.solar_cost>0))
+    tips.push({icon:'☀️',text:'The 30% Solar Residential Clean Energy Credit has no income cap in 2025. If you install solar panels, you could significantly reduce your federal tax.'});
+  /* Daycare time-space */
+  if(d.is_daycare)
+    tips.push({icon:'🏠',text:'Family daycare: track your time-space percentage carefully. Even a 2% increase in your ratio can meaningfully boost your Form 8829 deduction. Keep a daily log of daycare hours.'});
+  /* MD */
+  if(md && md.mdRefund<-200)
+    tips.push({icon:'🌐',text:'Maryland owes more than expected — verify your county tax rate and confirm state withholding on your W-2 Box 17.'});
+  /* SE quarterly */
+  if(fed.seTax>1000)
+    tips.push({icon:'📅',text:`You have significant self-employment tax ($${fed.seTax.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')}). Pay quarterly estimated taxes to avoid underpayment penalties. Due: April 15, June 16, Sept 15, Jan 15.`});
+
+  const wrap=document.createElement('div');
+  wrap.className='panel-card';
+  wrap.style.cssText='margin-bottom:14px;padding:16px';
+  wrap.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t2)">Tax-Saving Tips</div>
+    ${tips.map(t=>`<div style="display:flex;gap:10px;margin-bottom:10px;font-size:12px;color:var(--t3);line-height:1.5">
+      <span style="font-size:16px;flex-shrink:0">${t.icon}</span>
+      <span>${t.text}</span>
+    </div>`).join('')}`;
+  return wrap;
+}
+
+/* ── Print result ── */
+function txPrintResult(){
+  const fed=computeFederal(TX);
+  const md=TX.is_md!==false?computeMaryland(TX,fed):null;
+  const fmt=v=>'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  const win=window.open('','_blank','width=800,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>APEX Tax Estimate 2025</title>
+  <style>body{font-family:system-ui;padding:32px;color:#111}h1{font-size:20px}h2{font-size:15px;border-bottom:2px solid #000;padding-bottom:4px}
+  table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px}
+  td,th{padding:6px 10px;border-bottom:1px solid #eee;text-align:left}th{background:#f4f4f4;font-weight:600}
+  .total{font-weight:700;font-size:15px}.refund{color:green}.due{color:#cc0000}
+  @media print{button{display:none}}</style></head><body>
+  <h1>APEX Tax Return Estimate — 2025</h1>
+  <p style="color:#666;font-size:12px">Generated ${new Date().toLocaleString()} &middot; Educational estimate only</p>
+  <button onclick="window.print()" style="margin-bottom:16px;padding:8px 18px;background:#111;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨 Print</button>
+  <h2>Federal Summary</h2>
+  <table><tr><th>Item</th><th>Amount</th></tr>
+  <tr><td>AGI</td><td>${fmt(fed.agi)}</td></tr>
+  <tr><td>Deduction (${fed.deduction>fed.stdDed?'Itemized':'Standard'})</td><td>${fmt(fed.deduction)}</td></tr>
+  <tr><td>Taxable Income</td><td>${fmt(fed.taxableIncome)}</td></tr>
+  <tr><td>Federal Income Tax</td><td>${fmt(fed.fedTax)}</td></tr>
+  ${fed.seTax>0?`<tr><td>Self-Employment Tax</td><td>${fmt(fed.seTax)}</td></tr>`:''}
+  <tr><td>Total Credits</td><td style="color:green">-${fmt(fed.totalCredits)}</td></tr>
+  <tr><td>Total Federal Liability</td><td><strong>${fmt(fed.totalFedLiability)}</strong></td></tr>
+  <tr><td>Federal Withheld</td><td>${fmt(fed.fedWithheld)}</td></tr>
+  <tr class="total"><td>Federal ${fed.fedRefund>=0?'REFUND':'DUE'}</td>
+    <td class="${fed.fedRefund>=0?'refund':'due'}">${fed.fedRefund>=0?'+':'-'}${fmt(Math.abs(fed.fedRefund))}</td></tr>
+  </table>
+  ${md?`<h2>Maryland Summary (${md.county} County)</h2>
+  <table><tr><th>Item</th><th>Amount</th></tr>
+  <tr><td>MD Taxable Income</td><td>${fmt(md.mdTaxable)}</td></tr>
+  <tr><td>MD State Tax</td><td>${fmt(md.mdStateTax)}</td></tr>
+  <tr><td>Local Tax (${(md.localRate*100).toFixed(2)}%)</td><td>${fmt(md.mdLocalTax)}</td></tr>
+  <tr><td>Total MD Liability</td><td><strong>${fmt(md.totalMd)}</strong></td></tr>
+  <tr><td>MD Withheld</td><td>${fmt(md.mdWithheld)}</td></tr>
+  <tr class="total"><td>Maryland ${md.mdRefund>=0?'REFUND':'DUE'}</td>
+    <td class="${md.mdRefund>=0?'refund':'due'}">${md.mdRefund>=0?'+':'-'}${fmt(Math.abs(md.mdRefund))}</td></tr>
+  </table>`:''}
+  <p style="font-size:11px;color:#999;margin-top:20px">⚠️ This estimate is for educational purposes only. Consult a licensed tax professional before filing.</p>
+  </body></html>`);
+  win.document.close();
+}
+
+/* ── Reset ── */
+function txReset(){
+  if(!confirm('Reset your tax estimate? All entered data will be cleared.')) return;
+  localStorage.removeItem(TX_KEY);
+  TX={};
+  txStep=0;
+  renderTaxView();
+}
+
+/* ── Hook renderTaxView into showView ── */
+const _origShowView = window.showView;
+window.showView = function(name, el){
+  _origShowView && _origShowView(name, el);
+  if(name==='tax') renderTaxView();
+};
+
+})(); /* end IIFE */
 </script>
 </body>
 </html>
