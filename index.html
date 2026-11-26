@@ -4570,6 +4570,73 @@ function exportBudgetCSV() {
   toast('Exported budget.csv');
 }
 
+function importBudgetCSV() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.csv,text/csv';
+  inp.onchange = function(ev) {
+    const file = ev.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const lines = e.target.result.split('\n').map(l=>l.trim()).filter(Boolean);
+        if(!lines.length) { toast('CSV is empty'); return; }
+        const header = lines[0].split(',').map(h=>h.trim().toLowerCase());
+        const iType = header.indexOf('type');
+        const iLabel = header.indexOf('label');
+        const iAmount = header.indexOf('amount');
+        const iFreq = header.indexOf('frequency');
+        const iCat = header.indexOf('category');
+        if(iType<0||iLabel<0||iAmount<0) { toast('Invalid CSV format — need Type, Label, Amount columns'); return; }
+        const bd = BD.blank();
+        for(let i=1;i<lines.length;i++){
+          const cols = lines[i].match(/("([^"]|"")*"|[^,]*)(,|$)/g)||[];
+          const clean = cols.map(c=>c.replace(/(^,|,$)/g,'').trim().replace(/^"|"$/g,'').replace(/""/g,'"'));
+          const type  = (clean[iType]||'').toLowerCase();
+          const label = clean[iLabel]||'';
+          const amount= parseFloat(clean[iAmount])||0;
+          const freq  = iFreq>=0?(clean[iFreq]||'monthly'):'monthly';
+          const cat   = iCat>=0?(clean[iCat]||''):'';
+          if(type==='income')  bd.income.push({label,amount,freq});
+          else if(type==='expense') bd.expenses.push({label,amount,freq,cat});
+          else if(type==='goal') {
+            const savedMatch = cat.match(/Saved:\s*([\d.]+)/i);
+            const saved = savedMatch?parseFloat(savedMatch[1]):0;
+            bd.goals.push({label,target:amount,saved});
+          }
+        }
+        budgetData = bd;
+        BD.save(budgetData);
+        renderBudgetView();
+        toast('Budget imported — '+(bd.income.length+bd.expenses.length+bd.goals.length)+' rows loaded');
+      } catch(err) {
+        toast('Import failed: '+err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+function printBudget() {
+  const bd = budgetData || BD.load();
+  const fmt = v => '$'+parseFloat(v||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  const rows = (arr,type) => arr.map(r=>`<tr><td>${type}</td><td>${r.label||''}</td><td>${fmt(r.amount||r.target||0)}</td><td>${r.freq||''}</td><td>${r.cat||''}</td></tr>`).join('');
+  const win = window.open('','_blank','width=820,height=640');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>APEX Budget — ${new Date().toLocaleDateString()}</title>
+  <style>body{font-family:system-ui,sans-serif;padding:32px;color:#111}h1{font-size:22px;margin-bottom:4px}p{color:#555;font-size:13px;margin:0 0 20px}
+  table{width:100%;border-collapse:collapse;font-size:14px}th{background:#111;color:#fff;padding:8px 12px;text-align:left}
+  td{padding:7px 12px;border-bottom:1px solid #eee}tr:nth-child(even) td{background:#f9f9f9}
+  @media print{button{display:none}}</style></head><body>
+  <h1>APEX Budget Report</h1><p>Generated ${new Date().toLocaleString()}</p>
+  <button onclick="window.print()" style="margin-bottom:16px;padding:8px 18px;background:#111;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨 Print</button>
+  <table><thead><tr><th>Type</th><th>Label</th><th>Amount</th><th>Frequency</th><th>Category</th></tr></thead><tbody>
+  ${rows(bd.income||[],'Income')}${rows(bd.expenses||[],'Expense')}${(bd.goals||[]).map(g=>`<tr><td>Goal</td><td>${g.label||''}</td><td>${fmt(g.target||0)}</td><td></td><td>Saved: ${fmt(g.saved||0)}</td></tr>`).join('')}
+  </tbody></table></body></html>`);
+  win.document.close();
+}
+
 function clearAll() {
   if(!confirm('Reset ALL portfolio data? This cannot be undone.')) return;
   ['portfolio','watchlist','targets','settings','cash','rebal-cash'].forEach(k=>S.del(k));
@@ -5144,6 +5211,19 @@ function renderBudgetView() {
         <button onclick="openBudgetModal('add-income')"  class="ig-pill-btn" style="background:linear-gradient(135deg,#00e5b0,#00b8d9)">+ Income</button>
         <button onclick="openBudgetModal('add-goal')"    class="ig-pill-btn" style="background:linear-gradient(135deg,#a78bfa,#818cf8)">+ Goal</button>
       </div>
+    </div>
+
+    <!-- ══ IMPORT / EXPORT / PRINT BAR ══ -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <button onclick="importBudgetCSV()" class="btn btn-ghost" style="font-size:12px;padding:6px 14px;display:flex;align-items:center;gap:5px">
+        <span style="font-size:14px">📥</span> Import CSV
+      </button>
+      <button onclick="exportBudgetCSV()" class="btn btn-ghost" style="font-size:12px;padding:6px 14px;display:flex;align-items:center;gap:5px">
+        <span style="font-size:14px">📤</span> Export CSV
+      </button>
+      <button onclick="printBudget()" class="btn btn-ghost" style="font-size:12px;padding:6px 14px;display:flex;align-items:center;gap:5px">
+        <span style="font-size:14px">🖨</span> Print
+      </button>
     </div>
 
     ${tipHtml}
