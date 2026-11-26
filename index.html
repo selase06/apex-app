@@ -779,51 +779,65 @@ html, body {
 
 /* ── MOBILE ── */
 @media(max-width: 767px) {
+  /* ── Root overflow clamp — absolute guarantee no horizontal scroll ── */
+  html, body { overflow: hidden; max-width: 100vw; }
+  #app { overflow: hidden; max-width: 100vw; }
   #sidebar { display: none !important; }
-  #main { width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; }
-  #views { width: 100%; overflow-x: hidden; }
-  .view { width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  #main { width: 100%; min-width: 0; max-width: 100vw; box-sizing: border-box; overflow: hidden; }
+  #views { width: 100%; max-width: 100vw; overflow-x: hidden; }
+  .view { width: 100%; max-width: 100vw; box-sizing: border-box; overflow-x: hidden; }
   .settings-view { max-width: 100% !important; width: 100%; margin: 0; padding: 16px; box-sizing: border-box; }
-  .view-pad { width: 100%; box-sizing: border-box; padding: 14px; }
-  /* Panel header: stack title above actions on very narrow screens */
-  .panel-header { flex-wrap: wrap; gap: 4px; }
-  /* Table: hide less critical columns on mobile */
+  .view-pad { width: 100%; max-width: 100%; box-sizing: border-box; padding: 14px; }
+
+  /* ── Panel cards: fully contained ── */
+  .panel-card { width: 100%; box-sizing: border-box; overflow: hidden; }
+  .panel-header { flex-wrap: nowrap; gap: 4px; overflow: hidden; }
+  .panel-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 1; }
+  .panel-action { flex-shrink: 0; white-space: nowrap; }
+  .right-col { width: 100%; box-sizing: border-box; }
+
+  /* ── Paper trading: prevent min-width overflow ── */
+  .paper-stat { min-width: 0; flex: 1; }
+  .pt-pnl { min-width: 0; }
+
+  /* ── Table: hide less critical columns on mobile ── */
   .pos-table .hide-mobile { display: none !important; }
-  /* Keep table from blowing out viewport */
   .pos-table { table-layout: fixed; width: 100%; }
   .pos-th, .pos-td { padding: 8px 6px; font-size: 8px; }
   .pos-th:first-child, .pos-td:first-child { width: 28%; }
 
   /* ── Topbar: clamp to viewport, hide ticker, icon-only buttons ── */
   #topbar {
-    width: 100%; min-width: 0; overflow: hidden;
+    width: 100%; max-width: 100vw; min-width: 0; overflow: hidden;
     padding: 0 12px; gap: 8px;
   }
   #ticker-bar { display: none !important; }
-  .tb-btn { padding: 6px 10px; font-size: 10px; }
-  /* Truncate the title if needed */
-  .tb-title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tb-btn { padding: 6px 10px; font-size: 10px; white-space: nowrap; }
+  .tb-title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
-  /* ── Nav pill: flush to bottom edge ── */
+  /* ── Nav pill: full-width flush to bottom edge (Instagram style) ── */
   #mobile-nav {
     display: flex !important;
     position: fixed;
     bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100vw;
+    min-height: calc(64px + env(safe-area-inset-bottom));
+    padding-top: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
     padding-bottom: env(safe-area-inset-bottom);
-    left: 50%; transform: translateX(-50%);
-    width: calc(100% - 24px); max-width: 480px;
-    min-height: 64px; z-index: 200;
-    background: rgba(22,24,30,.96);
-    backdrop-filter: blur(28px) saturate(1.4);
-    -webkit-backdrop-filter: blur(28px) saturate(1.4);
-    border-radius: 32px 32px 0 0;
-    border: 1px solid rgba(255,255,255,.10);
-    border-bottom: none;
-    box-shadow: 0 -4px 24px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.35);
-    padding-top: 6px;
-    padding-left: 10px;
-    padding-right: 10px;
+    z-index: 200;
+    background: rgba(13,15,20,.97);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    border-top: 1px solid rgba(255,255,255,.10);
+    border-radius: 0;
+    box-shadow: 0 -1px 0 rgba(255,255,255,.06), 0 -8px 24px rgba(0,0,0,.5);
     align-items: flex-start;
+    gap: 0;
   }
 }
 
@@ -997,12 +1011,11 @@ html, body {
    ══════════════════════════════ */
 
 /* Safe-area insets for notched phones (iPhone X+) */
-/* Nav pill is now flush to bottom with padding-bottom: env(safe-area-inset-bottom) built in */
 @media (max-width: 767px) {
   #main {
     padding-top: env(safe-area-inset-top);
-    /* Bottom clearance: nav height (64px) + safe-area + extra breathing room */
-    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    /* Bottom clearance: nav height (64px) + safe-area + 16px breathing room */
+    padding-bottom: calc(64px + env(safe-area-inset-bottom) + 16px);
   }
 }
 /* Touch targets — min 44×44px */
@@ -6207,6 +6220,57 @@ function updatePinSettingsUI() {
   // Onboarding — show for first-time users after a brief delay
   setTimeout(maybeShowOnboarding, 800);
 })();
+
+// ── Service Worker registration (PWA offline support + iOS installability) ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    // Inline service worker as a Blob URL — works in single-file HTML
+    var SW_SRC = [
+      "const CACHE = 'apex-v1';",
+      "const PRECACHE = [self.location.href.replace(/\\/[^\\/]*$/, '/') || '/'];",
+      "self.addEventListener('install', e => {",
+      "  e.waitUntil(",
+      "    caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting())",
+      "  );",
+      "});",
+      "self.addEventListener('activate', e => {",
+      "  e.waitUntil(",
+      "    caches.keys().then(keys =>",
+      "      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))",
+      "    ).then(() => self.clients.claim())",
+      "  );",
+      "});",
+      "self.addEventListener('fetch', e => {",
+      "  if (e.request.method !== 'GET') return;",
+      "  e.respondWith(",
+      "    caches.match(e.request).then(cached => {",
+      "      if (cached) return cached;",
+      "      return fetch(e.request).then(resp => {",
+      "        if (!resp || resp.status !== 200 || resp.type === 'opaque') return resp;",
+      "        var clone = resp.clone();",
+      "        caches.open(CACHE).then(c => c.put(e.request, clone));",
+      "        return resp;",
+      "      }).catch(() => cached);",
+      "    })",
+      "  );",
+      "});"
+    ].join('\n');
+
+    try {
+      var blob = new Blob([SW_SRC], { type: 'application/javascript' });
+      var swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl, { scope: './' })
+        .then(function(reg) {
+          console.log('[APEX] SW registered, scope:', reg.scope);
+        })
+        .catch(function(err) {
+          console.log('[APEX] SW registration failed:', err);
+        });
+    } catch(e) {
+      console.log('[APEX] SW blob error:', e);
+    }
+  });
+}
 </script>
 </body>
 </html>
