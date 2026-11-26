@@ -344,7 +344,26 @@ html, body {
   background: var(--bg2);
   border: 1px solid var(--glass-border);
   border-radius: var(--r3); overflow: hidden;
+  position: relative;
 }
+.panel-card.clickable {
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+}
+.panel-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+  border-color: rgba(255,255,255,.14);
+}
+.panel-card.clickable:active { transform: scale(.98); }
+/* Ripple */
+.ripple-wave {
+  position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,.12);
+  animation: ripple-anim .5s ease-out forwards;
+  pointer-events: none; transform: scale(0);
+}
+@keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
 .panel-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 16px 12px;
@@ -731,13 +750,19 @@ html, body {
   #sidebar { display: none; }
   #mobile-nav {
     display: flex !important;
-    position: fixed; bottom: 0; left: 0; right: 0;
-    height: 56px; z-index: 100;
-    background: rgba(13,16,23,.95);
-    backdrop-filter: blur(20px);
-    border-top: 1px solid var(--glass-border);
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    width: calc(100% - 32px); max-width: 420px;
+    height: 64px; z-index: 200;
+    background: rgba(22,24,30,.96);
+    backdrop-filter: blur(28px) saturate(1.4);
+    -webkit-backdrop-filter: blur(28px) saturate(1.4);
+    border-radius: 32px;
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 8px 32px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
+    padding: 6px 10px;
+    align-items: center;
   }
-  #main { padding-bottom: 56px; }
+  #main { padding-bottom: 100px; }
 }
 
 #mobile-nav {
@@ -745,13 +770,25 @@ html, body {
 }
 .mob-tab {
   flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 2px;
-  cursor: pointer; border: none; background: none; color: var(--t3);
-  transition: color .15s; font-size: 8px; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase;
+  align-items: center; justify-content: center; gap: 3px;
+  cursor: pointer; border: none; background: none; color: rgba(255,255,255,.45);
+  transition: color .2s, background .2s; font-size: 9px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+  border-radius: 24px; height: 100%; padding: 0 4px;
+  position: relative; overflow: hidden;
 }
-.mob-tab.active { color: var(--acc); }
-.mob-tab-ic { font-size: 18px; line-height: 1; }
+.mob-tab.active {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+}
+.mob-tab.active::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 24px;
+  background: linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
+}
+.mob-tab:active { opacity: .7; transform: scale(.95); transition: transform .1s; }
+.mob-tab-ic { font-size: 20px; line-height: 1; }
+.mob-tab svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -1264,12 +1301,12 @@ html { -webkit-text-size-adjust: 100%; }
             <!-- Left: performance chart + positions -->
             <div>
               <!-- Performance chart -->
-              <div class="panel-card" style="margin-bottom:16px">
+              <div class="panel-card clickable" style="margin-bottom:16px" onclick="cardRipple(event);showView('analytics',document.querySelector('.nav-item[onclick*=\"analytics\"]'))">
                 <div class="panel-header">
                   <span class="panel-title">Portfolio Performance</span>
                   <div style="display:flex;align-items:center;gap:8px">
-                    <span id="bench-toggle" class="panel-action" onclick="toggleBench()" style="color:var(--t3)">vs S&P 500</span>
-                    <span class="panel-action" onclick="showView('analytics',null)">Full Analytics →</span>
+                    <span id="bench-toggle" class="panel-action" onclick="event.stopPropagation();toggleBench()" style="color:var(--t3)">vs S&P 500</span>
+                    <span class="panel-action" onclick="event.stopPropagation();showView('analytics',null)">Full Analytics →</span>
                   </div>
                 </div>
                 <div class="chart-tabs">
@@ -1291,7 +1328,7 @@ html { -webkit-text-size-adjust: 100%; }
               </div>
 
               <!-- Positions panel -->
-              <div class="panel-card">
+              <div class="panel-card clickable" onclick="cardRipple(event);showView('positions',document.querySelector('.nav-item[onclick*=\"positions\"]*)')">
                 <div class="panel-header">
                   <span class="panel-title">Holdings</span>
                   <span class="panel-action" onclick="showView('positions',null)">View All →</span>
@@ -1318,7 +1355,7 @@ html { -webkit-text-size-adjust: 100%; }
             <div class="right-col">
 
               <!-- Allocation donut -->
-              <div class="panel-card">
+              <div class="panel-card clickable" onclick="cardRipple(event);showView('analytics',null)">
                 <div class="panel-header">
                   <span class="panel-title">Allocation</span>
                 </div>
@@ -1335,7 +1372,7 @@ html { -webkit-text-size-adjust: 100%; }
               </div>
 
               <!-- Sector exposure -->
-              <div class="panel-card">
+              <div class="panel-card clickable" onclick="cardRipple(event);showView('heatmap',document.querySelector('.nav-item[onclick*=\"heatmap\"]'))">
                 <div class="panel-header">
                   <span class="panel-title">Sector Exposure</span>
                 </div>
@@ -1343,7 +1380,7 @@ html { -webkit-text-size-adjust: 100%; }
               </div>
 
               <!-- AI Insights -->
-              <div class="panel-card">
+              <div class="panel-card clickable" onclick="cardRipple(event);showView('coach',document.querySelector('.nav-item[onclick*=\"coach\"]'))">
                 <div class="panel-header">
                   <span class="panel-title">AI Insights</span>
                   <span class="nav-badge">LIVE</span>
@@ -1680,22 +1717,32 @@ html { -webkit-text-size-adjust: 100%; }
   </div><!-- end #main -->
 </div><!-- end #app -->
 
-<!-- Mobile nav -->
+<!-- Mobile nav — Instagram pill style -->
 <nav id="mobile-nav">
+  <!-- HOME -->
   <button class="mob-tab active" onclick="showView('overview',this)" id="mob-overview">
-    <span class="mob-tab-ic">⬡</span>HOME
+    <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+    HOME
   </button>
-  <button class="mob-tab" onclick="showView('positions',this)" id="mob-positions">
-    <span class="mob-tab-ic">◈</span>HOLDS
+  <!-- BUDGET -->
+  <button class="mob-tab" onclick="showView('budget',this)" id="mob-budget">
+    <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
+    BUDGET
   </button>
+  <!-- SIGNALS / SEND arrow like IG -->
   <button class="mob-tab" onclick="showView('signals',this)" id="mob-signals">
-    <span class="mob-tab-ic">◆</span>SIGNALS
+    <svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+    SIGNALS
   </button>
+  <!-- SEARCH -->
+  <button class="mob-tab" onclick="showView('watchlist',this)" id="mob-watchlist">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+    WATCH
+  </button>
+  <!-- PROFILE / AI COACH -->
   <button class="mob-tab" onclick="showView('coach',this)" id="mob-coach">
-    <span class="mob-tab-ic">✦</span>AI
-  </button>
-  <button class="mob-tab" onclick="showView('analytics',this)" id="mob-analytics">
-    <span class="mob-tab-ic">◉</span>STATS
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    AI
   </button>
 </nav>
 
@@ -2690,6 +2737,20 @@ function updateTimestamp() {
   $('last-updated').textContent = 'Updated ' + now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
 }
 
+/* ── CARD RIPPLE ── */
+function cardRipple(e) {
+  const card = e.currentTarget;
+  const rect = card.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const x = e.clientX - rect.left - size/2;
+  const y = e.clientY - rect.top  - size/2;
+  const rip = document.createElement('span');
+  rip.className = 'ripple-wave';
+  rip.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px`;
+  card.appendChild(rip);
+  setTimeout(() => rip.remove(), 520);
+}
+
 /* ── VIEW SWITCHING ── */
 const VIEW_TITLES = {
   overview:'Overview', budget:'Budget', positions:'Positions', signals:'Signals',
@@ -2705,13 +2766,21 @@ function showView(name, navEl) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.mob-tab').forEach(n => n.classList.remove('active'));
   if(navEl) navEl.classList.add('active');
+  // Sync mobile pill tab by view name regardless of which nav triggered the switch
+  const mobMatch = document.querySelector('#mob-'+name) || document.querySelector('.mob-tab[onclick*="\''+name+'\'"]');
+  if(mobMatch && !navEl) mobMatch.classList.add('active');
+  if(navEl && navEl.classList.contains('mob-tab')) {
+    // already set above; also sync sidebar
+    const sideMatch = document.querySelector('.nav-item[onclick*="\''+name+'\'"]');
+    if(sideMatch) sideMatch.classList.add('active');
+  }
   $('view-title').textContent = VIEW_TITLES[name] || name;
 
   // View-specific renders
-  if(name==='budget')   renderBudgetView();
+  if(name==='budget')    renderBudgetView();
   if(name==='positions') renderFullPositions();
-  if(name==='signals')  { const {rows}=computedPositions(); renderSignals(rows); }
-  if(name==='settings') renderProfileGrid();
+  if(name==='signals')   { const {rows}=computedPositions(); renderSignals(rows); }
+  if(name==='settings')  renderProfileGrid();
 }
 
 /* ── SIDEBAR TOGGLE ── */
